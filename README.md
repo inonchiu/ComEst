@@ -43,7 +43,7 @@ Authors:
 
 ### Documentation
 
-Please see the [here](http://www.usm.uni-muenchen.de/people/inonchiu/ComEst/index.html).
+Please see [here](http://www.usm.uni-muenchen.de/people/inonchiu/ComEst/index.html).
 
 ### Acknowledgement
 
