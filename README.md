@@ -54,4 +54,3 @@ If you use **ComEst** in your work please remember to reference the [paper](http
 
 Any comment and suggestion is welcome, please email to `inonchiu@usm.lmu.de`, `shantanu@usm.lmu.de` or `astro.jiayi@googlemail.com`.
 
-### Liscence
