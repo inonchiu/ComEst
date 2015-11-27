@@ -188,7 +188,13 @@ def _PntSrcLocator_single(
     full_image  =  galsim.fits.read(path2image)
     # get the pixel_scale from cd matrix -> there should be a simpler way but I dont know how right now.
     # it has to multiply 3600 to convert it from degree to arcsec.
-    pixel_scale  =  sqrt( abs( np.linalg.det(full_image.wcs.cd) ) ) * 3600.0
+    try: 
+        pixel_scale  =  sqrt( abs( np.linalg.det(full_image.wcs.cd) ) ) * 3600.0
+    except:
+        pixel_scale  =  sqrt( abs( galsim.fits.FitsHeader(path2image).header["CD1_1"] * \
+                                   galsim.fits.FitsHeader(path2image).header["CD2_2"] - \
+                                   galsim.fits.FitsHeader(path2image).header["CD1_2"] * \
+                                   galsim.fits.FitsHeader(path2image).header["CD2_1"] ) ) * 3600.0
     # get the image size -> it seems it is 1-basis, hence the xmax means the number of pixel.
     full_image_xsize  =  full_image.xmax
     full_image_ysize  =  full_image.ymax
@@ -361,7 +367,13 @@ def _BulDiskLocator_single(
     full_image  =  galsim.fits.read(path2image)
     # get the pixel_scale from cd matrix -> there should be a simpler way but I dont know how right now.
     # it has to multiply 3600 to convert it from degree to arcsec.
-    pixel_scale  =  sqrt( abs( np.linalg.det(full_image.wcs.cd) ) ) * 3600.0
+    try: 
+        pixel_scale  =  sqrt( abs( np.linalg.det(full_image.wcs.cd) ) ) * 3600.0
+    except:
+        pixel_scale  =  sqrt( abs( galsim.fits.FitsHeader(path2image).header["CD1_1"] * \
+                                   galsim.fits.FitsHeader(path2image).header["CD2_2"] - \
+                                   galsim.fits.FitsHeader(path2image).header["CD1_2"] * \
+                                   galsim.fits.FitsHeader(path2image).header["CD2_1"] ) ) * 3600.0
     # get the image size -> it seems it is 1-basis, hence the xmax means the number of pixel.
     full_image_xsize  =  full_image.xmax
     full_image_ysize  =  full_image.ymax
@@ -556,7 +568,13 @@ def _RealGalLocator_single(
     full_image  =  galsim.fits.read(path2image)
     # get the pixel_scale from cd matrix -> there should be a simpler way but I dont know how right now.
     # it has to multiply 3600 to convert it from degree to arcsec.
-    pixel_scale  =  sqrt( abs( np.linalg.det(full_image.wcs.cd) ) ) * 3600.0
+    try: 
+        pixel_scale  =  sqrt( abs( np.linalg.det(full_image.wcs.cd) ) ) * 3600.0
+    except:
+        pixel_scale  =  sqrt( abs( galsim.fits.FitsHeader(path2image).header["CD1_1"] * \
+                                   galsim.fits.FitsHeader(path2image).header["CD2_2"] - \
+                                   galsim.fits.FitsHeader(path2image).header["CD1_2"] * \
+                                   galsim.fits.FitsHeader(path2image).header["CD2_1"] ) ) * 3600.0
     # get the image size -> it seems it is 1-basis, hence the xmax means the number of pixel.
     full_image_xsize  =  full_image.xmax
     full_image_ysize  =  full_image.ymax
