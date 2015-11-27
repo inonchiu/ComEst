@@ -47,7 +47,7 @@ Please see [here](http://www.usm.uni-muenchen.de/people/inonchiu/ComEst/index.ht
 
 ### Acknowledgement
 
-If you use **ComEst** in your work please remember to reference the [paper](http://www.usm.uni-muenchen.de/people/inonchiu/ComEst.pdf).
+If you use **ComEst** in your work please contact the authors.
 This work is dedicated to Chien-Ho Lin in Taiwan.
 
 
