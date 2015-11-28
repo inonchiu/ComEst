@@ -7,6 +7,9 @@ Authors:
 
 **ComEst** is released as a **Python** package with an easy-to-use and flexible syntax. More information can be found in [here](http://www.usm.uni-muenchen.de/people/inonchiu/ComEst.pdf).
 
+If you use **ComEst** in your work please contact the authors.
+
+
 ### Installation
 
  1. Download **ComEst**.
@@ -47,8 +50,11 @@ Please see [here](http://www.usm.uni-muenchen.de/people/inonchiu/ComEst/index.ht
 
 ### Acknowledgement
 
-If you use **ComEst** in your work please contact the authors.
-This work is dedicated to Chien-Ho Lin in Taiwan.
+This work is dedicated to Chien-Ho Lin in Taiwan. 
+
+We acknowledge the support by the DFG Cluster of Excellence "Origin and Structure of the Universe", the DLR award 50 OR 1205 that supported I. Chiu during his PhD project, and the Transregio program TR33 "The Dark Universe". 
+The computations for **ComEst** have been have been carried out on the computing facilities of the Computational Center for Particle and Astrophysics (C2PAP) and of the Leibniz Supercomputer Center (LRZ).
+
 
 
 ### Contribution
