@@ -157,7 +157,7 @@ def CreateSrcFreeMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, path2
     # write the outfits
     out_hdu             =   pyfits.PrimaryHDU(
                             data = out_map, header = readin_headers["idnt_map"] )
-    out_hdu.writeto(path2out_map, clobber = True)
+    out_hdu.writeto(path2out_map, clobber = True, output_verify = "ignore")
                                              
     return 0
 
@@ -217,7 +217,7 @@ def CreateBnBMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, srcfree, 
     # write the outfits
     out_hdu             =   pyfits.PrimaryHDU(
                             data = out_map, header = readin_headers["idnt_map"] )
-    out_hdu.writeto(path2out_map, clobber = True)
+    out_hdu.writeto(path2out_map, clobber = True, output_verify = "ignore")
                                              
     return 0
 
@@ -1440,9 +1440,9 @@ class fitsimage:
             output_mef_true     =   pyfits.HDUList( hdus = list_of_nsrc_merged_true_xy )
             output_mef_matched  =   pyfits.HDUList( hdus = list_of_nsrc_matched_pairs_xy )
             # write output
-            output_mef.writeto(path2outmap, clobber = True)
-            output_mef_true.writeto(path2outtruemap, clobber = True)
-            output_mef_matched.writeto(path2outmatchedpairsmap, clobber = True)
+            output_mef.writeto(path2outmap, clobber = True, output_verify = "ignore")
+            output_mef_true.writeto(path2outtruemap, clobber = True, output_verify = "ignore")
+            output_mef_matched.writeto(path2outmatchedpairsmap, clobber = True, output_verify = "ignore")
             # close file
             output_mef.close()
             output_mef_true.close()
@@ -1652,8 +1652,8 @@ class fitsimage:
             output_mef        =   pyfits.HDUList( hdus = list_of_fpurxy )
             output_mef_allse  =   pyfits.HDUList( hdus = list_of_allse  )
             # write output
-            output_mef.writeto(path2outmap, clobber = True)
-            output_mef_allse.writeto(path2outallse, clobber = True)
+            output_mef.writeto(path2outmap, clobber = True, output_verify = "ignore")
+            output_mef_allse.writeto(path2outallse, clobber = True, output_verify = "ignore")
             # close file
             output_mef.close()
             output_mef_allse.close()
