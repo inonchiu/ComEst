@@ -35,6 +35,8 @@ Add reference - saying please cite ... if you use **ComEst** in your work.  And 
 
  3. To run **ComEst** one needs the following prerequisites.
 
+    * Python 2.7
+
     * Python Packages
       - **[Numpy](http://www.numpy.org/)**
       - **[SciPy](http://www.scipy.org/)**
