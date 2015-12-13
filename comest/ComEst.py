@@ -140,10 +140,16 @@ def CreateSrcFreeMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, path2
                                 loc   = readin_imgs["bckg_map"    ],
                                 scale = readin_imgs["bckg_rms_map"] )
     except ValueError:
-        print RuntimeWarning("background rms map from Sextractor has value < 0, probably due to data corruption. We use absolute instead.")
+        print RuntimeWarning("background rms map from Sextractor has value < 0, probably due to data corruption. We use median value instead.")
+        bckg_rms_map_sanitized        = np.copy( readin_imgs["bckg_rms_map"] )
+        keep_me_in_rms_map            = np.isfinite( readin_imgs["bckg_rms_map"] ) & ( readin_imgs["bckg_rms_map"] > 0.0 )
+        bckg_rms_map_sanitized[ ~keep_me_in_rms_map ]   = np.median( bckg_rms_map_sanitized[ keep_me_in_rms_map ] )
         simulated_bckg      =   np.random.normal(
                                 loc   = readin_imgs["bckg_map"    ],
-                                scale = np.abs(readin_imgs["bckg_rms_map"]) )
+                                scale = bckg_rms_map_sanitized )
+                                #scale = np.abs(readin_imgs["bckg_rms_map"]) )
+        # clean
+        del bckg_rms_map_sanitized, keep_me_in_rms_map
 
     # fill the object pixels with the simulated background in out_map
     out_map[i_am_objs_pixels]     =     simulated_bckg[i_am_objs_pixels]

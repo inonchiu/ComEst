@@ -221,7 +221,8 @@ def _PntSrcLocator_single(
     # The stamp size in pixel. it has to be the multiply of 2.
     stamp_size   =  np.int(stamp_size_arcsec  / pixel_scale)     \
     if  np.int(stamp_size_arcsec  / pixel_scale) % 2 == 0 else \
-        np.int(10.0 / pixel_scale) + 1
+        np.int(stamp_size_arcsec  / pixel_scale) + 1
+        #np.int(10.0 / pixel_scale) + 1
 
 
     # copy the image
@@ -400,7 +401,8 @@ def _BulDiskLocator_single(
     # The stamp size in pixel. it has to be the multiply of 2.
     stamp_size   =  np.int(stamp_size_arcsec  / pixel_scale)     \
     if  np.int(stamp_size_arcsec  / pixel_scale) % 2 == 0 else \
-        np.int(10.0 / pixel_scale) + 1
+        np.int(stamp_size_arcsec  / pixel_scale) + 1
+        #np.int(10.0 / pixel_scale) + 1
 
 
     # copy the image
@@ -601,7 +603,8 @@ def _RealGalLocator_single(
     # The stamp size in pixel. it has to be the multiply of 2.
     stamp_size   =  np.int(stamp_size_arcsec  / pixel_scale)     \
     if  np.int(stamp_size_arcsec  / pixel_scale) % 2 == 0 else \
-        np.int(10.0 / pixel_scale) + 1
+        np.int(stamp_size_arcsec  / pixel_scale) + 1
+        #np.int(10.0 / pixel_scale) + 1
 
 
     # copy the image
