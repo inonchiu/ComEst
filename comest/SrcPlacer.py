@@ -744,7 +744,7 @@ def BulDiskLocator(
     
     This function reads the ``path2image`` and put the fake galaxies on it. In this case it is the galaxies consisting of buldge and disk components. The properties of the fake galaxies are configured by several input parameters and they are convolved with psf before being put on the image. The simulated sources are uniformly distributed in the CCD ( so are in all the provided configuration) with the number density of ``ngals_arcmin2``.
         
-    .. seealso:: ``comest.ComEst.BulDiskLocator`` for more details about the configuration.
+    .. seealso:: ``comest.ComEst.locate_bul_disk`` for more details about the configuration.
         
     """
 
@@ -877,7 +877,7 @@ def RealGalLocator(
         
     This function reads the ``path2image`` and put the fake galaxies on it. The properties of the fake galaxies are directly taken from **COSMOS** catalog provided by **Galsim** team and they are convolved with psf before being put on the image. In this routine, we only use ``pos_ang_dict`` to re-rotate the galaxies. Please run ``galsim_download_cosmos`` provided by **GalSim** to download the **COSMOS** catalog.  Please note that since we are resampling from the observed catalog, hence the configurations of the galaxy shape of ``hlr_dict``, ``fbulge_dict`` and ``q_dict`` do _NOT_ apply on this set of simulation. But for the sake of consistency,this routine still requires these input configuration. The simulated sources are uniformly distributed in the CCD with the number density of ``ngals_arcmin2``.
 
-    .. seealso:: ``comest.ComEst.RealGalLocator`` for more details about the configuration.
+    .. seealso:: ``comest.ComEst.locate_real_galaxy`` for more details about the configuration.
     
     .. todo:: Perhaps we should add the input catalog arguments in the future.
         
@@ -1014,7 +1014,7 @@ def PntSrcLocator(
         
     This function reads the ``path2image`` and put the fake point sources on it. This method puts the fake sources on this image. In this case it is for the point sources (e.g., stars) convolving with the given PSF. Please note that since we are simulating point sources, the actually shape of simulated sources is just the PSF with the size of given ``img_fwhm``. Therefore the configurations of ``hlr_dict``, ``fbulge_dict``, ``q_dict`` and ``pos_ang_dict`` do _NOT_ apply here. But for the sake of consistency,this routine still requires these input configuration. The simulated sources are uniformly distributed in the CCD with the number density of ``ngals_arcmin2``.
         
-    .. seealso:: ``comest.ComEst.PntSrcLocator`` for more details about the configuration.
+    .. seealso:: ``comest.ComEst.locate_point_src`` for more details about the configuration.
         
     """
 

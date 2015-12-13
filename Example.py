@@ -55,7 +55,7 @@ np.random.seed(232)
 #####
 
 # create an instance for image
-fits_image_example  =   comest.ComEst.fitsimage(
+fits_image_example  =   comest.ComEst.FITSImage(
                         path2img = path2img,
                         path2outdir = path2outdir,
                         sex_exec = sex_exec,
@@ -80,10 +80,10 @@ fits_image_example.i_am()
 #####
 
 # run and it will create a bunch of fits containing full srcs
-fits_image_example.RunSEforAll()
+fits_image_example.run_SE_for_all()
 
 # create the srcfree fits image and save it.
-fits_image_example.SaveSrcFreeFits()
+fits_image_example.save_src_free_FITS()
 
 
 #####
@@ -93,10 +93,10 @@ fits_image_example.SaveSrcFreeFits()
 #####
 
 # run and it will create a bunch of fits containing BnB srcs
-fits_image_example.RunSEforBnB()
+fits_image_example.run_SE_for_BnB()
 
 # create the BnB fits image and save it.
-fits_image_example.SaveBnBFits()
+fits_image_example.save_BnB_FITS()
 
 #####
 #
@@ -105,7 +105,7 @@ fits_image_example.SaveBnBFits()
 #####
 
 for nsnset in xrange(nset):
-    mef_buldisk, cat_buldisk = fits_image_example.BulDiskLocator(
+    mef_buldisk, cat_buldisk = fits_image_example.locate_bul_disk(
                            path2image = fits_image_example.path2outdir + "/" + bnb_root_name + ".identical.bnb.fits",
                            nsimimages = nsimimages,
                            ngals_arcmin2 = 15.0,
@@ -116,7 +116,7 @@ for nsnset in xrange(nset):
                            sims_nameroot = "buldisk_"+"%i" % nsnset)
 
 for nsnset in xrange(nset):
-    mef_pntsrcs, cat_pntsrcs = fits_image_example.PntSrcLocator(
+    mef_pntsrcs, cat_pntsrcs = fits_image_example.locate_point_src(
                            path2image = fits_image_example.path2outdir + "/" + bnb_root_name + ".identical.bnb.fits",
                            nsimimages = nsimimages,
                            ngals_arcmin2 = 15.0,
@@ -127,7 +127,7 @@ for nsnset in xrange(nset):
                            sims_nameroot = "pntsrc_"+"%i" % nsnset)
 
 for nsnset in xrange(nset):
-    mef_realgal, cat_realgal = fits_image_example.RealGalLocator(
+    mef_realgal, cat_realgal = fits_image_example.locate_real_galaxy(
                            path2image = fits_image_example.path2outdir + "/" + bnb_root_name + ".identical.bnb.fits",
                            nsimimages = nsimimages,
                            ngals_arcmin2 = 15.0,
@@ -144,9 +144,9 @@ for nsnset in xrange(nset):
 #####
 
 for nsnset in xrange(nset):
-    fits_image_example.RunSEforSims( sims_nameroot = "buldisk_"+"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits")
-    fits_image_example.RunSEforSims( sims_nameroot = "realgal_"+"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits")
-    fits_image_example.RunSEforSims( sims_nameroot = "pntsrc_" +"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits")
+    fits_image_example.run_SE_for_sims(sims_nameroot ="buldisk_" + "%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap =fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits")
+    fits_image_example.run_SE_for_sims(sims_nameroot ="realgal_" + "%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap =fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits")
+    fits_image_example.run_SE_for_sims(sims_nameroot ="pntsrc_" + "%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap =fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits")
 
 
 #####
@@ -157,8 +157,8 @@ for nsnset in xrange(nset):
 
 HIST_DICT        =       {
     ttype + "_" + "%i" % nsnset   :   {
-        "com"   :   fits_image_example.DeriveCom(sims_nameroot = ttype + "_" + "%i" % nsnset, x_steps_arcmin = 3.0, y_steps_arcmin = 3.0, mag_edges = np.arange(20.0,27.0,0.1), save_files = True),
-        "pur"   :   fits_image_example.DerivePur(sims_nameroot = ttype + "_" + "%i" % nsnset, x_steps_arcmin = 3.0, y_steps_arcmin = 3.0, mag_edges = np.arange(20.0,27.0,0.1), save_files = True),
+        "com"   :   fits_image_example.derive_completeness(sims_nameroot =ttype + "_" + "%i" % nsnset, x_steps_arcmin = 3.0, y_steps_arcmin = 3.0, mag_edges = np.arange(20.0, 27.0, 0.1), save_files = True),
+        "pur"   :   fits_image_example.derive_purity(sims_nameroot =ttype + "_" + "%i" % nsnset, x_steps_arcmin = 3.0, y_steps_arcmin = 3.0, mag_edges = np.arange(20.0, 27.0, 0.1), save_files = True),
     } for ttype in ["buldisk", "realgal", "pntsrc"] for nsnset in xrange(nset)
 }
 

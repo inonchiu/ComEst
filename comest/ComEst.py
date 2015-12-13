@@ -25,7 +25,7 @@ PATH2CODE        =       os.path.dirname( os.path.abspath(__file__) ) # get the 
 #
 ######
 
-def SE_CMD_CREATOR(se_exec_is, img_is, se_config_is, se_params_is, outdir_is, name_root_is, args_is = "", outputcheckimage = True, next = 0):
+def create_SE_cmd(se_exec_is, img_is, se_config_is, se_params_is, outdir_is, name_root_is, args_is ="", check_output_image = True, next = 0):
     """
     This method will create the se command which is run on the image.
 
@@ -37,7 +37,7 @@ def SE_CMD_CREATOR(se_exec_is, img_is, se_config_is, se_params_is, outdir_is, na
         -`outdir_is`: string. The abs directory that we wish to put SE output.
         -`name_root_is`: string. The root name of the output of SE. E.g., [name_root_is].cat.fits for catalog.
         -`args_is`: string. The additional arguments of SE. sex img_is -c se_config_is args_is
-        -`outputcheckimage`: bool. Whether or not to output the check image.
+        -`check_output_image`: bool. Whether or not to output the check image.
         -`next`: non-negative int. The next you want to run sex on. Default is zero.
     Returns:
         -`cmd_is`: string. The command which can be called via os.system(cmd_is).
@@ -65,7 +65,7 @@ def SE_CMD_CREATOR(se_exec_is, img_is, se_config_is, se_params_is, outdir_is, na
     # construct the CHECKIMAGE_TYPE
     checkimage_type                 =       "IDENTICAL,BACKGROUND,BACKGROUND_RMS,-BACKGROUND,OBJECTS,-OBJECTS,SEGMENTATION,APERTURES"
     # construct the SE command - default is that we use filter
-    if outputcheckimage == True:
+    if check_output_image == True:
         cmd_is  =                     se_exec_is      + "    " + \
                                       img_is          + "["+str(next)+"]     " + \
               " -c "                + se_config_is    + "    " + \
@@ -87,7 +87,7 @@ def SE_CMD_CREATOR(se_exec_is, img_is, se_config_is, se_params_is, outdir_is, na
     return cmd_is
 
 
-def CreateSrcFreeMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, path2out_map):
+def create_src_free_map(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, path2out_map):
     """
     This function reads in the check image of SE outputs running on the SAME input image and eventually
     creates the full source-free fits image.
@@ -152,7 +152,7 @@ def CreateSrcFreeMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, path2
 
     return 0
 
-def CreateBnBMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, srcfree, path2out_map):
+def create_BnB_map(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, srcfree, path2out_map):
     """
     This function reads in the check image of SE outputs running on the SAME input image and eventually
     creates the full fits image with only BnB (Big and Bright) objects.
@@ -162,7 +162,7 @@ def CreateBnBMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, srcfree, 
     If the pixel is not belonging to a source, then this function will generate the background value for that pixel
     given the same position at the background and background_rms check images outputted by SE.
 
-    Caveat: it has to use the source-free image created previously by CreateSrcFreeMap.
+    Caveat: it has to use the source-free image created previously by create_src_free_map.
 
     Parameters:
         -`idnt_map` :   string. the path to the identical fits image.
@@ -212,7 +212,7 @@ def CreateBnBMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, srcfree, 
 
     return 0
 
-def Nearest_interpolator(values_array, x_edges, y_edges, new_x_edges, new_y_edges):
+def interpolate_nearest(values_array, x_edges, y_edges, new_x_edges, new_y_edges):
     """
     This subroutine interpolate the values of given arrays by 'Nearest_Neighbor' algorithm.
 
@@ -254,7 +254,7 @@ def Nearest_interpolator(values_array, x_edges, y_edges, new_x_edges, new_y_edge
 #
 ######
 
-class fitsimage:
+class FITSImage:
 
     # ---
     # initialize the set ups
@@ -357,7 +357,7 @@ class fitsimage:
     # ---
     # Run SE command
     # ---
-    def RunSE(self, name_root_is, se_args_is):
+    def run_SE(self, name_root_is, se_args_is):
         """
 
         :param name_root_is: The code name for this **SExtractor** run. The names of all outputs (catalog/check-images) of **SExtractor** are marked by this code name consistently.
@@ -379,13 +379,13 @@ class fitsimage:
                               " -FILTER_NAME"   + "    " + os.path.join(PATH2CODE, "templates/default.conv") + \
                               "    " + se_args_is
         # construct the command
-        run_me  =   SE_CMD_CREATOR(se_exec_is   = self.sex_exec,
-                                   img_is       = self.path2img,
-                                   se_config_is = self.sex_config,
-                                   se_params_is = self.sex_params,
-                                   outdir_is    = self.path2outdir,
-                                   name_root_is = name_root_is,
-                                   args_is      = put_me_in_se_args)
+        run_me  =   create_SE_cmd(se_exec_is   = self.sex_exec,
+                                  img_is       = self.path2img,
+                                  se_config_is = self.sex_config,
+                                  se_params_is = self.sex_params,
+                                  outdir_is    = self.path2outdir,
+                                  name_root_is = name_root_is,
+                                  args_is      = put_me_in_se_args)
         # print run_me
         print "#", "run_me:"
         print
@@ -400,7 +400,7 @@ class fitsimage:
     # ---
     # Run SE command for all sources
     # ---
-    def RunSEforAll(self):
+    def run_SE_for_all(self):
         """
 
         :returns: ``stdout``. The standard output status of **SExtractor** run. ``stdout = 0`` for successful **SExtractor** run.
@@ -415,13 +415,13 @@ class fitsimage:
                               " -PIXEL_SCALE"   + "    " + "%.3f" % self.img_pixel_scale + \
                               "    " + self.full_sex_args
         # construct the command
-        run_me  =   SE_CMD_CREATOR(se_exec_is   = self.sex_exec,
-                                   img_is       = self.path2img,
-                                   se_config_is = self.sex_config,
-                                   se_params_is = self.sex_params,
-                                   outdir_is    = self.path2outdir,
-                                   name_root_is = self.full_root_name,
-                                   args_is      = put_me_in_se_args)
+        run_me  =   create_SE_cmd(se_exec_is   = self.sex_exec,
+                                  img_is       = self.path2img,
+                                  se_config_is = self.sex_config,
+                                  se_params_is = self.sex_params,
+                                  outdir_is    = self.path2outdir,
+                                  name_root_is = self.full_root_name,
+                                  args_is      = put_me_in_se_args)
         # print run_me
         print "#", "run_me:"
         print
@@ -436,7 +436,7 @@ class fitsimage:
     # ---
     # Run SE command for BNB
     # ---
-    def RunSEforBnB(self):
+    def run_SE_for_BnB(self):
         """
 
         :returns: ``stdout``. The standard output status of **SExtractor** run. ``stdout = 0`` for successful **SExtractor** run.
@@ -451,13 +451,13 @@ class fitsimage:
                               " -PIXEL_SCALE"   + "    " + "%.3f" % self.img_pixel_scale + \
                               "    " + self.bnb_sex_args
         # construct the command
-        run_me  =   SE_CMD_CREATOR(se_exec_is   = self.sex_exec,
-                                   img_is       = self.path2img,
-                                   se_config_is = self.sex_config,
-                                   se_params_is = self.sex_params,
-                                   outdir_is    = self.path2outdir,
-                                   name_root_is = self.bnb_root_name,
-                                   args_is      = put_me_in_se_args)
+        run_me  =   create_SE_cmd(se_exec_is   = self.sex_exec,
+                                  img_is       = self.path2img,
+                                  se_config_is = self.sex_config,
+                                  se_params_is = self.sex_params,
+                                  outdir_is    = self.path2outdir,
+                                  name_root_is = self.bnb_root_name,
+                                  args_is      = put_me_in_se_args)
         # print run_me
         print "#", "run_me:"
         print
@@ -472,14 +472,14 @@ class fitsimage:
     # ---
     # Create src_free images
     # ---
-    def SaveSrcFreeFits(self):
+    def save_src_free_FITS(self):
         """
 
         This function run CreateFullSrcFreeMap to create the source-free image (SFI). The output files are saved in the path2outdir with the name of ``full_root_name`` + ``.identical.srcfree.fits``.
 
         """
         # run the command
-        CreateSrcFreeMap(
+        create_src_free_map(
         idnt_map        =   os.path.join(self.path2outdir, self.full_root_name + ".identical.fits"),
         segm_map        =   os.path.join(self.path2outdir, self.full_root_name + ".segmentation.fits"),
         bckg_map        =   os.path.join(self.path2outdir, self.full_root_name + ".background.fits"),
@@ -496,14 +496,14 @@ class fitsimage:
     # ---
     # Create bnb images
     # ---
-    def SaveBnBFits(self):
+    def save_BnB_FITS(self):
         """
 
-        This function run CreateBnBMap to create the BnB image. The output files are saved in the ``path2outdir`` with the name of ``bnb_root_name`` + ``.identical.bnb.fits``.
+        This function run create_BnB_map to create the BnB image. The output files are saved in the ``path2outdir`` with the name of ``bnb_root_name`` + ``.identical.bnb.fits``.
 
         """
         # run the command
-        CreateBnBMap(
+        create_BnB_map(
         idnt_map        =   os.path.join(self.path2outdir, self.bnb_root_name + ".identical.fits"),
         segm_map        =   os.path.join(self.path2outdir, self.bnb_root_name + ".segmentation.fits"),
         bckg_map        =   os.path.join(self.path2outdir, self.bnb_root_name + ".background.fits"),
@@ -520,23 +520,23 @@ class fitsimage:
 
 
     # ---
-    # BulDiskLocator
+    # locate_bul_disk
     # ---
-    def BulDiskLocator(self,
-        path2image,
-        psf_dict   = None,
-        stamp_size_arcsec   =   20.0,
-        mag_dict   = {"lo":20.0, "hi":25.0 },
-        hlr_dict   = {"lo":0.35 , "hi":0.75  },
-        fbulge_dict= {"lo":0.5 , "hi":0.9  },
-        q_dict     = {"lo":0.4 , "hi":1.0  },
-        pos_ang_dict={"lo":0.0 , "hi":180.0},
-        ngals_arcmin2 = 15.0,
-        nsimimages    = 50,
-        random_seed   = 234231,
-        sims_nameroot = "buldisk",
-        ncpu          = 2,
-        ):
+    def locate_bul_disk(self,
+                        path2image,
+                        psf_dict   = None,
+                        stamp_size_arcsec   =   20.0,
+                        mag_dict   = {"lo":20.0, "hi":25.0 },
+                        hlr_dict   = {"lo":0.35 , "hi":0.75  },
+                        fbulge_dict= {"lo":0.5 , "hi":0.9  },
+                        q_dict     = {"lo":0.4 , "hi":1.0  },
+                        pos_ang_dict={"lo":0.0 , "hi":180.0},
+                        ngals_arcmin2 = 15.0,
+                        nsimimages    = 50,
+                        random_seed   = 234231,
+                        sims_nameroot = "buldisk",
+                        ncpu          = 2,
+                        ):
         """
 
         :param path2image: The absolute path to the image which you want to put the simulated sources on. This is usually the source free image (SFI), or it can also be the BnB image if you want to simulate the sources on the image where the observed BnB sources are kept. One can uses BnB image to test how the BnB sources affect the detection.
@@ -582,9 +582,9 @@ class fitsimage:
         :returns: ``out_mef`` is the list containing the simulated images and ``out_true_cats`` is the list containing the information of the mock catalogs (hence ``len(out_mef) = len(out_true_cats) = nsimimages``).
         :rtype: list, list
 
-        This method calls the routine ``comest.SrcPlacer.BulDiskLocator`` to put the fake sources on this image. In this case it is the galaxies consisting of buldge and disk components. The simulated sources are uniformly distributed in the CCD ( so are in all the provided configuration) with the number density of ``ngals_arcmin2``.
+        This method calls the routine ``comest.SrcPlacer.locate_bul_disk`` to put the fake sources on this image. In this case it is the galaxies consisting of buldge and disk components. The simulated sources are uniformly distributed in the CCD ( so are in all the provided configuration) with the number density of ``ngals_arcmin2``.
 
-        .. seealso:: ``comest.SrcPlacer.BulDiskLocator`` for more details about the configuration.
+        .. seealso:: ``comest.SrcPlacer.locate_bul_disk`` for more details about the configuration.
 
 
         """
@@ -596,7 +596,7 @@ class fitsimage:
 
         # diagnostic output
         print
-        print "#", "Using BulDiskLocator to put galaxies (bulge + disk) on the targeted image..."
+        print "#", "Using locate_bul_disk to put galaxies (bulge + disk) on the targeted image..."
         print "#", "path2image:", path2image
         print "#", "psf_dict:", psf_dict
         print "#", "stamp_size_arcsec:", stamp_size_arcsec
@@ -616,7 +616,7 @@ class fitsimage:
         t1      =       time.time()
 
         # run it and save it as the file.
-        out_mef, out_true_cats  = SrcPlacer.BulDiskLocator(
+        out_mef, out_true_cats  = SrcPlacer.locate_bul_disk(
             path2image          = path2image,
             zeropoint           = zeropoint,
             psf_dict            = psf_dict,
@@ -665,23 +665,23 @@ class fitsimage:
         return out_mef, out_true_cats
 
     # ---
-    # RealGalLocator
+    # locate_real_galaxy
     # ---
-    def RealGalLocator(self,
-        path2image,
-        psf_dict   = None,
-        stamp_size_arcsec   =   20.0,
-        mag_dict   = {"lo":20.0, "hi":25.0 },
-        hlr_dict   = {"lo":0.35 , "hi":0.75  },
-        fbulge_dict= {"lo":0.5 , "hi":0.9  },
-        q_dict     = {"lo":0.4 , "hi":1.0  },
-        pos_ang_dict={"lo":0.0 , "hi":180.0},
-        ngals_arcmin2 = 15.0,
-        nsimimages    = 50,
-        random_seed   = 234231,
-        sims_nameroot = "realgal",
-        ncpu          = 2,
-        ):
+    def locate_real_galaxy(self,
+                           path2image,
+                           psf_dict   = None,
+                           stamp_size_arcsec   =   20.0,
+                           mag_dict   = {"lo":20.0, "hi":25.0 },
+                           hlr_dict   = {"lo":0.35 , "hi":0.75  },
+                           fbulge_dict= {"lo":0.5 , "hi":0.9  },
+                           q_dict     = {"lo":0.4 , "hi":1.0  },
+                           pos_ang_dict={"lo":0.0 , "hi":180.0},
+                           ngals_arcmin2 = 15.0,
+                           nsimimages    = 50,
+                           random_seed   = 234231,
+                           sims_nameroot = "realgal",
+                           ncpu          = 2,
+                           ):
         """
 
         :param path2image: The absolute path to the image which you want to put the simulated sources on. This is is usually the source free image (SFI), or it can also be the BnB image if you want to simulate the sources on the image where the observed BnB sources are kept. One can uses BnB image to test how the BnB sources affect the detection.
@@ -728,9 +728,9 @@ class fitsimage:
         :rtype: list, list
 
 
-        This method calls the routine ``comest.SrcPlacer.RealGalLocator`` to put the fake sources on this image. In this case it is the real galaxies observed catalog provided by **GalSim** and **COSMOS** teams. Please note that since we are resampling from the observed catalog, hence the configurations of the galaxy shape of ``hlr_dict``, ``fbulge_dict`` and ``q_dict`` do _NOT_ apply on this set of simulation. But for the sake of consistency,this routine still requires these input configuration. The simulated sources are uniformly distributed in the CCD with the number density of ``ngals_arcmin2``.
+        This method calls the routine ``comest.SrcPlacer.locate_real_galaxy`` to put the fake sources on this image. In this case it is the real galaxies observed catalog provided by **GalSim** and **COSMOS** teams. Please note that since we are resampling from the observed catalog, hence the configurations of the galaxy shape of ``hlr_dict``, ``fbulge_dict`` and ``q_dict`` do _NOT_ apply on this set of simulation. But for the sake of consistency,this routine still requires these input configuration. The simulated sources are uniformly distributed in the CCD with the number density of ``ngals_arcmin2``.
 
-        .. seealso:: ``comest.SrcPlacer.RealGalLocator`` for more details about the configuration.
+        .. seealso:: ``comest.SrcPlacer.locate_real_galaxy`` for more details about the configuration.
 
         """
         # assign the value and sanitize
@@ -741,7 +741,7 @@ class fitsimage:
 
         # diagnostic output
         print
-        print "#", "Using RealGalLocator to put galaxies (bulge + disk) on the targeted image..."
+        print "#", "Using locate_real_galaxy to put galaxies (bulge + disk) on the targeted image..."
         print "#", "path2image:", path2image
         print "#", "psf_dict:", psf_dict
         print "#", "stamp_size_arcsec:", stamp_size_arcsec
@@ -761,7 +761,7 @@ class fitsimage:
         t1      =       time.time()
 
         # run it and save it as the file.
-        out_mef, out_true_cats  = SrcPlacer.RealGalLocator(
+        out_mef, out_true_cats  = SrcPlacer.locate_real_galaxy(
             path2image          = path2image,
             zeropoint           = zeropoint,
             psf_dict            = psf_dict,
@@ -810,23 +810,23 @@ class fitsimage:
         return out_mef, out_true_cats
 
     # ---
-    # PntSrcLocator
+    # locate_point_src
     # ---
-    def PntSrcLocator(self,
-        path2image,
-        psf_dict   = None,
-        stamp_size_arcsec   =   20.0,
-        mag_dict   = {"lo":20.0, "hi":25.0 },
-        hlr_dict   = {"lo":0.35 , "hi":0.75  },
-        fbulge_dict= {"lo":0.5 , "hi":0.9  },
-        q_dict     = {"lo":0.4 , "hi":1.0  },
-        pos_ang_dict={"lo":0.0 , "hi":180.0},
-        ngals_arcmin2 = 15.0,
-        nsimimages    = 50,
-        random_seed   = 2342221,
-        sims_nameroot = "pntsrc",
-        ncpu          = 2,
-        ):
+    def locate_point_src(self,
+                         path2image,
+                         psf_dict   = None,
+                         stamp_size_arcsec   =   20.0,
+                         mag_dict   = {"lo":20.0, "hi":25.0 },
+                         hlr_dict   = {"lo":0.35 , "hi":0.75  },
+                         fbulge_dict= {"lo":0.5 , "hi":0.9  },
+                         q_dict     = {"lo":0.4 , "hi":1.0  },
+                         pos_ang_dict={"lo":0.0 , "hi":180.0},
+                         ngals_arcmin2 = 15.0,
+                         nsimimages    = 50,
+                         random_seed   = 2342221,
+                         sims_nameroot = "pntsrc",
+                         ncpu          = 2,
+                         ):
         """
 
         :param path2image: The absolute path to the image which you want to put the simulated sources on. This is is usually the source free image (SFI), or it can also be the BnB image if you want to simulate the sources on the image where the observed BnB sources are kept. One can uses BnB image to test how the BnB sources affect the detection.
@@ -872,9 +872,9 @@ class fitsimage:
         :rtype: list, list
 
 
-        This method calls the routine ``comest.SrcPlacer.PntSrcLocator`` to put the fake sources on this image. In this case it is for the point sources (e.g., stars) convolving with the given PSF. Please note that since we are simulating point sources, the actually shape of simulated sources is just the PSF with the size of given ``img_fwhm``. Therefore the configurations of ``hlr_dict``, ``fbulge_dict``, ``q_dict`` and ``pos_ang_dict`` do _NOT_ apply here. But for the sake of consistency,this routine still requires these input configuration. The simulated sources are uniformly distributed in the CCD with the number density of ``ngals_arcmin2``.
+        This method calls the routine ``comest.SrcPlacer.locate_point_src`` to put the fake sources on this image. In this case it is for the point sources (e.g., stars) convolving with the given PSF. Please note that since we are simulating point sources, the actually shape of simulated sources is just the PSF with the size of given ``img_fwhm``. Therefore the configurations of ``hlr_dict``, ``fbulge_dict``, ``q_dict`` and ``pos_ang_dict`` do _NOT_ apply here. But for the sake of consistency,this routine still requires these input configuration. The simulated sources are uniformly distributed in the CCD with the number density of ``ngals_arcmin2``.
 
-        .. seealso:: ``comest.SrcPlacer.PntSrcLocator`` for more details about the configuration.
+        .. seealso:: ``comest.SrcPlacer.locate_point_src`` for more details about the configuration.
 
         """
         # assign the value and sanitize
@@ -885,7 +885,7 @@ class fitsimage:
 
         # diagnostic output
         print
-        print "#", "Using PntSrcLocator to put point sources on the targeted image..."
+        print "#", "Using locate_point_src to put point sources on the targeted image..."
         print "#", "path2image:", path2image
         print "#", "psf_dict:", psf_dict
         print "#", "stamp_size_arcsec:", stamp_size_arcsec
@@ -905,7 +905,7 @@ class fitsimage:
         t1      =       time.time()
 
         # run it and save it as the file.
-        out_mef, out_true_cats  = SrcPlacer.PntSrcLocator(
+        out_mef, out_true_cats  = SrcPlacer.locate_point_src(
             path2image          = path2image,
             zeropoint           = zeropoint,
             psf_dict            = psf_dict,
@@ -958,7 +958,7 @@ class fitsimage:
     # ---
     # Run SE on sims
     # ---
-    def RunSEforSims(self, sims_nameroot, sims_sex_args = "", path2maskmap = None, outputcheckimage = False, tol_fwhm = 1.0):
+    def run_SE_for_sims(self, sims_nameroot, sims_sex_args ="", path2maskmap = None, outputcheckimage = False, tol_fwhm = 1.0):
         """
 
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**.
@@ -1045,7 +1045,7 @@ class fitsimage:
         for nn_mef  in xrange(Nmef):
             # construct the command
             run_me.append(
-                SE_CMD_CREATOR(
+                create_SE_cmd(
                 se_exec_is      = self.sex_exec,
                 img_is          = path2sims_img,
                 se_config_is    = self.sex_config,
@@ -1053,7 +1053,7 @@ class fitsimage:
                 outdir_is       = outdir_sims,
                 name_root_is    = outdir_sims + "/" + sims_nameroot + ".sims.sex.%i" % nn_mef,
                 args_is         = put_me_in_se_args,
-                outputcheckimage= outputcheckimage,
+                check_output_image= outputcheckimage,
                 next            = nn_mef) )
 
 
@@ -1243,7 +1243,7 @@ class fitsimage:
 
 
     # derive the completeness as the function of magnitude and ccd position
-    def DeriveCom(self, sims_nameroot, x_steps_arcmin = None, y_steps_arcmin = None, mag_edges = None, save_files = False):
+    def derive_completeness(self, sims_nameroot, x_steps_arcmin = None, y_steps_arcmin = None, mag_edges = None, save_files = False):
         """
 
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**.
@@ -1405,7 +1405,7 @@ class fitsimage:
                 temp_fits_header.append(
                     pyfits.Card('MAG_HI', mag_edges[1: ][nnm], 'the mag_hi of the magnitude slice of fcom_xy') )
                 # get the data
-                #temp_fits_data      =   Nearest_interpolator(
+                #temp_fits_data      =   interpolate_nearest(
                 #                        values_array = fcom_of_xy[nnm],
                 #                        x_edges = x_edges,
                 #                        y_edges = y_edges,
@@ -1452,7 +1452,7 @@ class fitsimage:
 
 
     # derive the purity as the function of magnitude and ccd position
-    def DerivePur(self, sims_nameroot, x_steps_arcmin = None, y_steps_arcmin = None, mag_edges = None, save_files = False):
+    def derive_purity(self, sims_nameroot, x_steps_arcmin = None, y_steps_arcmin = None, mag_edges = None, save_files = False):
         """
 
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**.
@@ -1483,7 +1483,7 @@ class fitsimage:
 
 
         .. note:: If one wants to have the reliable measurement for the purity as a function of CCD position, it is _extremely_ important to enlarge the number of the simulated images ``nsimimages`` in the simulation run. Or one should use ``mag_edges`` with wider magnitude bin. Otherwise the poisson noise of the input mock is too large for this measurement to be useful.
-        .. seealso:: ``comest.ComEst.DeriveCom``
+        .. seealso:: ``comest.ComEst.derive_completeness``
 
         """
         # diagnostic
@@ -1621,7 +1621,7 @@ class fitsimage:
                 temp_fits_header.append(
                     pyfits.Card('MAG_HI', mag_edges[1: ][nnm], 'the mag_hi of the magnitude slice of fpur_xy') )
                 # get the data
-                #temp_fits_data      =   Nearest_interpolator(
+                #temp_fits_data      =   interpolate_nearest(
                 #                        values_array = fput_of_xy[nnm],
                 #                        x_edges = x_edges,
                 #                        y_edges = y_edges,
