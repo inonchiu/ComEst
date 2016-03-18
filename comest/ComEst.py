@@ -8,9 +8,8 @@
 
 import numpy as np
 from math import *
-#import scipy.interpolate as interpolate
-#import matplotlib.pyplot as pyplt
-#import galsim
+import scipy.interpolate as interpolate
+import scipy.optimize as optimize
 import pyfits
 import SrcPlacer
 import py2dmatch
@@ -31,7 +30,7 @@ PATH2CODE        =       os.path.dirname( os.path.abspath(__file__) ) # get the 
 def SE_CMD_CREATOR(se_exec_is, img_is, se_config_is, se_params_is, outdir_is, name_root_is, args_is = "", outputcheckimage = True, next = 0):
     """
     This method will create the se command which is run on the image.
-        
+
     Parameters:
         -`se_exec_is`: string. The path to to bin of SE. Usually it is the output of `which sex`.
         -`img_is`: string. The abs path of the image which we wish to run SE.
@@ -256,6 +255,377 @@ def Nearest_interpolator(values_array, x_edges, y_edges, new_x_edges, new_y_edge
     # derive the new_values_array
     new_values_array    =   interp_seed(new_x_mesh.flatten(), new_y_mesh.flatten()).reshape(new_x_mesh.shape)
     return new_values_array
+
+# ---
+# The standalone function to analysis SE output catalog
+# ---
+def AnalysisSEcat(
+    path2secat,
+    img_pixel_scale     = 0.26,
+    class_star_cut      = 0.8,
+    mag_edges           = np.arange(18.0,28.0,0.05),
+    powerlaw_mag_dict   = {"lo":20.0, "hi":22.0 },
+    mag_dict            = {"lo":19.0, "hi":25.0 },
+    hlr_dict            = {"lo":0.1 , "hi":1.5  },
+    fbulge_dict         = {"lo":0.5 , "hi":0.9  },
+    q_dict              = {"lo":0.4 , "hi":1.0  },
+    pos_ang_dict        = {"lo":0.0 , "hi":180.0},
+    nsimimages          = 2,
+    random_seed         = 234231,
+    path2outdir         = ".",
+    sims_nameroot       = "buldisk",
+    saveplot            = False,
+    ):
+    """
+    :param path2secat: The absolute path to the se output catalog, as the input catalog of this routine. It has to be in fits format (FITS_LDAC). It has to contain at least the MAG_AUTO/FLUX_RADIUS/CLASS_STAR/XWIN_IMAGE/YWIN_IMAGE columns.
+
+    :param img_pixel_scale: The pixel scale of the observed image. It is in the unit of arcsec/pixel. Currently **ComEst** does not support reading pixel scale from the header while loading in the image.
+
+    :param class_star_cut: The threshold for which the object is identified as a star if the ``CLASS_STAR`` is above it. If this value is outside (0,1) then every objecy is identified as a galaxy. Default is 0.8.
+
+    :param mag_edges: The magnitude edges used for hist1d on MAG_AUTO. It should well cover the magnitude range of the input catalog. Default is ``np.arange(18.0,28.0,0.05)``.
+
+    :param powerlaw_mag_dict: the magnitude range the power law is modelled. Note, the this magnitude range is assumed to be complete such that we can describe it by the power law. This should only affect the way we estimate the number of galaxies per arcmin2. Default is ``{"lo":20.0, "hi":22.0 }``.
+
+    :param mag_dict: the magnitude range we simulate the galaxies. The magnitude distribution will be followed by the modelled power law. Default is ``{"lo":19.0, "hi":25.0 }``.
+
+    :param fbulge_dict: The configuration of the fraction of the bulge component. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and 1 means the galaxy has zero fraction of light from the disk component. By default, it is ``fbulge_dict = {"lo":0.5 , "hi":0.9  }``.
+
+    :param q_dict: The minor-to-major axis ratio configuration of the sources simulated by **GalSim**. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and ``q = 1`` means spherical. By default, it is ``q_dict = {"lo":0.4 , "hi":1.0 }``.
+
+    :param pos_ang_dict: The position angle configuration of the sources simulated by **GalSim**. It is in the unit of degree. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,180.0] and it is counter-clockwise with +x is 0 degree. By default, it is ``pos_ang_dict={"lo":0.0 , "hi":180.0 }``.
+
+    :param nsimimages: The number of the images you want to simulate. It will be saved in the multi-extension file with the code name ``sims_nameroot``. By default, it is ``nsimimages = 50``.
+
+    :param random_seed: The random seed of the random generator. It will be passed to **GalSim** for simulating the sources.
+
+    :param path2outdir: The absolute path to the output directory. All the files created by **ComEst** are saved in this directory. **ComEst** will create ``path2outdir`` if ``path2outdir`` does not exist (therefore please make sure you have the permission to create such directory).
+
+    :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**. By default, it is ``sims_nameroot = "buldisk"``.
+
+    :param saveplot: Whether to save the diagnostic plot. Default is True. The plot will be saved under the nameroot of ``sims_nameroot``.
+
+    :type path2secat: str
+    :type img_pixel_scale: float
+    :type class_star_cut: float
+    :type mag_edges: array
+    :type powerlaw_mag_dict: dict
+    :type mag_dict: dict
+    :type fbulge_dict: dict
+    :type q_dict: dict
+    :type pos_ang_dict: dict
+    :type nsimimages: int
+    :type random_seed: int
+    :type path2outdir: str
+    :type sims_nameroot: str
+    :type saveplot: bool
+
+    :returns: ``out_true_cats`` is the list containing the information of the mock catalogs (hence ``len(out_true_cats) = nsimimages``).
+    :rtype: list
+
+    This is a standalone function to perform the basic statistics of the SE output catalogs, and then simulate the fake galaxies based on these results.
+    Specifically, this function will perform the star/galaxy separation based on the ``CLASS_STAR`` cut.
+    Then the magnitude distribution of galaxies will be modelled by a power law between the magnitude range given by ``powerlaw_mag_dict``.
+    Next, ``nsimimages`` sets of fake galaxies is simulated based on the estimated statistics, hlr(m) and N(m).
+    In the end, the output catalogs are saved in the disk and given the nameroot of ``sims_nameroot``.
+
+    """
+    # sanitize / extract the value
+    img_pixel_scale     =       float(img_pixel_scale)                  # arcsec/pixel
+    class_star_cut      =       float(class_star_cut)                   # float
+    mag_edges           =       np.array(mag_edges, ndmin=1)            # The magnitude edges used to bin the hist1d
+    hlr_lo              =       hlr_dict["lo"] / img_pixel_scale        # in pixel
+    hlr_hi              =       hlr_dict["hi"] / img_pixel_scale        # in pixel
+    powerlaw_mag_lo     =       powerlaw_mag_dict["lo"]                 # The magnitude range used to model the powerlaw
+    powerlaw_mag_hi     =       powerlaw_mag_dict["hi"]                 # The magnitude range used to model the powerlaw
+    fbulge_lo           =       fbulge_dict["lo"]                       # bulge fraction
+    fbulge_hi           =       fbulge_dict["hi"]                       # bulge fraction
+    q_lo                =       q_dict["lo"]                            # axis ratio
+    q_hi                =       q_dict["hi"]                            # axis ratio
+    pos_ang_lo          =       pos_ang_dict["lo"]                      # position angle
+    pos_ang_hi          =       pos_ang_dict["hi"]                      # position angle
+    mag_lo              =       mag_dict["lo"]                          # the magnitude range we simulate the galaxies
+    mag_hi              =       mag_dict["hi"]                          # the magnitude range we simulate the galaxies
+
+    # derive some necessary variables
+    mag_bins            =       0.5*(mag_edges[1:] + mag_edges[:-1])        # the mag_bins used for hist1d
+    mag_steps           =       mag_edges[1:] - mag_edges[:-1]              # the mag_bins used for hist1d
+    use_me_to_sim       =       (mag_lo <= mag_bins) & (mag_bins <= mag_hi) # the magnitude range we selected from mag_bins used for simulations
+    hlr_edges           =       np.arange(hlr_lo, hlr_hi + 0.5, 0.5)        # the hlr binning used for hist1d
+    hlr_bins            =       0.5*(hlr_edges[1:] + hlr_edges[:-1])        # the hlr binning used for hist1d
+    hlr_steps           =       hlr_edges[1:] - hlr_edges[:-1]              # the hlr binning used for hist1d
+
+    # ---
+    # read in catalog
+    # ---
+    readincat           =       pyfits.getdata(path2secat, ext = -1)
+    # assign values
+    xwin                =       readincat["XWIN_IMAGE" ]        # the x coordinate in pixel
+    ywin                =       readincat["YWIN_IMAGE" ]        # the y coordinate in pixel
+    class_star          =       readincat["CLASS_STAR" ]        # the s/g separator
+    magnitude           =       readincat["MAG_AUTO"   ]        # the magnitude of SE catalog
+    flux_radius         =       readincat["FLUX_RADIUS"]        # this is in the unit of pixel
+    xmin, xmax          =       xwin.min(), xwin.max()          # derive the x range in pixel
+    ymin, ymax          =       ywin.min(), ywin.max()          # derive the y range in pixel
+
+    # check whether we perform the sg separation using class_star
+    if      0.0 <   class_star_cut  <   1.0:
+        i_am_star       =       ( class_star > class_star_cut )
+        print "#", "using CLASS_STAR for the s/g separation. class_star_cut:", class_star_cut
+    else:
+        i_am_star       =       ~np.ones(len(class_star), dtype = bool)
+        print "#", "No s/g separation is applied, every object is considered as a galaxy."
+
+    # ---
+    # hist1d the objects using magnitude
+    # ---
+    histmag_all             =       np.histogram(magnitude              , bins = mag_edges)[0]
+    histmag_gal             =       np.histogram(magnitude[ ~i_am_star ], bins = mag_edges)[0]
+    histmag_star            =       np.histogram(magnitude[  i_am_star ], bins = mag_edges)[0]
+
+    # ---
+    # digitize the objects using magnitude - be careful the boundary, the objects could be 0 or len(mag_edges) if they are beyond the boundary
+    # ---
+    digitize_all            =       np.digitize(x = magnitude              , bins = mag_edges)
+    digitize_gal            =       np.digitize(x = magnitude[ ~i_am_star ], bins = mag_edges)
+    digitize_star           =       np.digitize(x = magnitude[  i_am_star ], bins = mag_edges)
+
+    # ---
+    # select the flux_radius (or called hlr) for each magnitude bin
+    # ---
+    hlr_gal                 =       np.array([ flux_radius[ ~i_am_star ][ (digitize_gal == nmag) ]           for nmag, mag in enumerate(mag_bins) ])
+    histhlr_gal             =       np.array([ np.histogram(sample, bins = hlr_edges)[0]                     for sample in hlr_gal ])
+    meanhlr_gal             =       np.array([ np.mean(  sample[ (hlr_lo <= sample) & (sample <= hlr_hi) ])  for sample in hlr_gal ])
+    stdhlr_gal              =       np.array([ np.std(   sample[ (hlr_lo <= sample) & (sample <= hlr_hi) ])  for sample in hlr_gal ])
+    # comment it out since it will returns error if empty array is passed - should be fixed in the newer version of np
+    #medianhlr_gal           =       np.array([ np.median(sample[ (hlr_lo <= sample) & (sample <= hlr_hi) ])  for sample in hlr_gal ])
+
+
+    # ---
+    # define functions (dealing with the boundary) to interpolate the hlr_mean and hlr_std as function of magnitude - it can be easily solved if scipy is in 0.17
+    # ---
+    def hlr_of_mag(x):
+        # select use_me
+        use_me_meanhlr          =       (meanhlr_gal > 0.0) & np.isfinite(meanhlr_gal)
+        # interpolate model
+        hlr_of_mag_interp1d     =       interpolate.interp1d(x = mag_bins[    use_me_meanhlr ],
+                                                             y = meanhlr_gal[ use_me_meanhlr ],
+                                                             bounds_error = False)
+        # sanitize
+        x = np.array(x, ndmin=1)
+        # interpolate
+        y = hlr_of_mag_interp1d(x)
+        # deal with boundary
+        left_y  =   y[ np.isfinite(y) ][0]
+        right_y =   y[ np.isfinite(y) ][-1]
+        y[ (x <= mag_bins[    use_me_meanhlr ][0 ]) ] =   float(left_y )
+        y[ (x >= mag_bins[    use_me_meanhlr ][-1]) ] =   float(right_y)
+        return y
+
+    def stdhlr_of_mag(x):
+        # select use_me
+        use_me_stdhlr           =       (stdhlr_gal  > 0.0) & np.isfinite(stdhlr_gal )
+        # interpolate model
+        stdhlr_of_mag_interp1d  =       interpolate.interp1d(x = mag_bins[   use_me_stdhlr ],
+                                                             y = stdhlr_gal[ use_me_stdhlr ],
+                                                             bounds_error = False)
+        # sanitize
+        x = np.array(x, ndmin=1)
+        # interpolate
+        y = stdhlr_of_mag_interp1d(x)
+        # deal with boundary
+        left_y  =   y[ np.isfinite(y) ][0]
+        right_y =   y[ np.isfinite(y) ][-1]
+        y[ (x <= mag_bins[    use_me_stdhlr ][0 ]) ] =   float(left_y )
+        y[ (x >= mag_bins[    use_me_stdhlr ][-1]) ] =   float(right_y)
+        return y
+
+    # ---
+    # powerlaw
+    # ---
+    def powerlaw(x, slope, yint):
+        return x * slope + yint
+
+    # ---
+    # fit the completeness model
+    # ---
+    def  fit_powerlaw(x, y, yerr, use_me):
+        return optimize.curve_fit(powerlaw, xdata = x[ use_me ], ydata = y[ use_me ], sigma = yerr[ use_me ])
+
+    # find the slope and yint
+    slope_and_yint, covar   =   fit_powerlaw(
+                                x = mag_bins,
+                                y = np.log10(histmag_gal),
+                                yerr = np.log10( 1.0 + 1.0 / np.sqrt(histmag_gal)),
+                                use_me = (histmag_gal > 0.0) & (mag_bins >= powerlaw_mag_lo) & (mag_bins <= powerlaw_mag_hi) )
+
+    # ---
+    # define a drawing function for hlr to avoid it is negative
+    # ---
+    def draw_hlr(hlr_center, hlr_scale, draw_size):
+        drawed  =   np.random.normal(loc = hlr_center, scale = hlr_scale, size = draw_size)
+        i_am_negative   =   (drawed <= 0.0)
+        n_negative      =   len(np.where(i_am_negative == True)[0])
+        while n_negative > 0:
+            drawed[ i_am_negative ]   =   np.random.normal(loc = hlr_center, scale = hlr_scale, size = n_negative)
+            i_am_negative             =   (drawed <= 0.0)
+            n_negative                =   len(np.where(i_am_negative == True)[0])
+        return drawed
+
+    # ---
+    # set the random seed
+    # ---
+    np.random.seed(random_seed)
+    # simulate the counts per magnitude - this has the shape of (nsimimages, len(mag_bins[use_me_to_sim]))
+    sim_mag_bins            =   mag_bins[  use_me_to_sim ]
+    sim_mag_steps           =   mag_steps[ use_me_to_sim ]
+    counts                  =   np.random.poisson( lam = 10.0**powerlaw(sim_mag_bins, slope_and_yint[0], slope_and_yint[1]), size = (nsimimages, len(sim_mag_bins)) )
+    true_catalogs           =   {}
+    for nimage in range(nsimimages):
+        mags                    =   np.array([
+                                    np.random.uniform(sim_mag_bins[nmag] - sim_mag_steps[nmag], sim_mag_bins[nmag] + sim_mag_steps[nmag], size = counts[nimage][nmag])
+                                    for nmag in range(0, len(sim_mag_bins))
+                                             ])
+        # change np.concatenate to hstack to avoid error in the older version of numpy
+        nobjs                   =   len(np.hstack(np.copy(mags)))
+        #nobjs                   =   len(np.concatenate(np.copy(mags), axis = 1))
+        hlrs                    =   np.array([
+                                    draw_hlr(hlr_center = hlr_of_mag(sim_mag_bins)[nmag], hlr_scale = stdhlr_of_mag(sim_mag_bins)[nmag], draw_size = counts[nimage][nmag])
+                                    for nmag in range(0, len(sim_mag_bins))
+                                             ])
+        fbulges                 =   np.random.uniform(fbulge_lo , fbulge_hi , size = nobjs)
+        qs                      =   np.random.uniform(q_lo      , q_hi      , size = nobjs)
+        pos_angs                =   np.random.uniform(pos_ang_lo, pos_ang_hi, size = nobjs)
+        xx                      =   np.random.uniform(xmin      , xmax      , size = nobjs)
+        yy                      =   np.random.uniform(ymin      , ymax      , size = nobjs)
+        # update
+        true_catalogs.update({nimage:
+                             np.core.records.fromarrays([
+                             np.copy(xx), np.copy(yy),
+                             np.hstack(np.copy(mags)),
+                             np.hstack(np.copy(hlrs)),
+                             np.hstack(np.copy(hlrs)) * img_pixel_scale,
+                             #np.concatenate(np.copy(mags), axis = 1),
+                             #np.concatenate(np.copy(hlrs), axis = 1),
+                             #np.concatenate(np.copy(hlrs), axis = 1) * img_pixel_scale,
+                             np.copy(fbulges),
+                             np.copy(qs),
+                             np.copy(pos_angs)],
+                             names = "x_true,y_true,mag_true,hlr_true[pixel],hlr_true[arcsec],fbulge_true,q_true,pos_ang[deg]")
+                             })
+        # clean
+        del mags, nobjs, hlrs, fbulges, qs, pos_angs, xx, yy
+
+
+    # ---
+    # Diagnostic output
+    # ---
+    print
+    print "#", "Analysis done."
+    print "#", "catalog:", path2secat
+    print "#", "total objects:", len(i_am_star)
+    print "#", "stars:", len(np.where(i_am_star == True)[0])
+    print "#", "gals:", len(np.where(i_am_star == False)[0])
+    print
+    print "#", "modelled power law slope:", slope_and_yint[0]
+    print "#", "modelled power law yint:", slope_and_yint[1]
+    print
+    print "#", "magnitude edges used for binning:", mag_edges
+    print "#", "magnitude range used for modelling power law:", powerlaw_mag_dict
+    print "#", "hlr edges used to hist1d for given magnitude:", hlr_dict
+    print "#", "magnitude range used for simulating galaxies:", mag_dict
+    print "#", "(xmin, xmax):", xmin, xmax, "[pixel]"
+    print "#", "(ymin, ymax):", ymin, ymax, "[pixel]"
+    print "#", "fbulge range used for simulating galaxies:", fbulge_dict
+    print "#", "q range used for simulating galaxies:", q_dict
+    print "#", "position angle range used for simulating galaxies:", pos_ang_dict
+    print
+    print "#", "number of the simulated images:", nsimimages
+    print "#", "random_seed:", random_seed
+    print "#", "sims_nameroot:", sims_nameroot
+    print "#", "path2outdir:", path2outdir
+    print "#", "saveplot:", saveplot
+    print
+
+
+    # ---
+    # save tables
+    # ---
+    # make sure dir exists
+    outdir_sims             = os.path.join(path2outdir, sims_nameroot + "_sims")
+    if os.path.isdir( outdir_sims ) == False: os.makedirs(outdir_sims)
+    # save for mef table
+    phdulist = pyfits.PrimaryHDU( header = pyfits.BinTableHDU(data = true_catalogs[0]).header ) # primary table
+    list4fits= [phdulist]                                                                       # put it in the list first
+    for ntable in  xrange(nsimimages):                                                          # append all the tables
+        list4fits.append( pyfits.BinTableHDU(data = true_catalogs[ntable]) )                    # append all the tables
+    thdulist = pyfits.HDUList(list4fits)                                                        # convert it into table hdulist
+    thdulist.writeto(outdir_sims + "/" + sims_nameroot + ".sims.cat.fits", clobber = True)      # save
+
+    # diagnostic
+    print
+    print "#", "sims cat:",
+    print outdir_sims + "/" + sims_nameroot + ".sims.cat.fits"
+    print
+
+
+    # ---
+    # plot
+    # ---
+    if   saveplot:
+        # import matplotlib
+        import matplotlib
+        matplotlib.use("ps")
+        import matplotlib.pyplot as pyplt
+
+        pyplt.figure("diagnostic plots", figsize = (8.0,8.0))
+        # subplot of flux_radius v.s. magnitude
+        pyplt.subplot(221)
+        pyplt.plot(flux_radius, magnitude, "k,", label = "all")
+        pyplt.plot(flux_radius[i_am_star], magnitude[i_am_star], "y,", label = "stars")
+        pyplt.plot(true_catalogs[0]["hlr_true[pixel]"], true_catalogs[0]["mag_true"], "m,", label = "simulated")
+        pyplt.xscale("symlog")
+        pyplt.xscale("symlog")
+        pyplt.xlabel("$\\tt{FLUX\_RADIUS}$", fontsize = 15.0)
+        pyplt.ylabel("$\\tt{MAG\_AUTO}$", fontsize = 15.0)
+        pyplt.axis([ true_catalogs[0]["hlr_true[pixel]"].min() * 0.1,
+                     true_catalogs[0]["hlr_true[pixel]"].max() * 5.0,
+                     true_catalogs[0]["mag_true"].min() - 1.0 ,
+                     true_catalogs[0]["mag_true"].max() + 1.0 ])
+
+        # subplot of flux_radius as function of magnitude
+        pyplt.subplot(222)
+        pyplt.errorbar(mag_bins, meanhlr_gal  , yerr = stdhlr_gal, fmt = "ro")
+        pyplt.plot(mag_bins, hlr_of_mag(mag_bins) + stdhlr_of_mag(mag_bins), "r--")
+        pyplt.plot(mag_bins, hlr_of_mag(mag_bins) - stdhlr_of_mag(mag_bins), "r--")
+        pyplt.xlabel("$\\tt{MAG\_AUTO}$", fontsize = 15.0)
+        pyplt.ylabel("$\\tt{FLUX\_RADIUS}$", fontsize = 15.0)
+
+        # subplot of hist1d
+        pyplt.subplot(223)
+        pyplt.plot(mag_bins, np.histogram(true_catalogs[0]["mag_true"], bins = mag_edges)[0] / mag_steps, "m-", label = "simulated")
+        pyplt.plot(mag_bins, histmag_all / mag_steps, "k.", label = "all")
+        pyplt.plot(mag_bins, histmag_star / mag_steps, "y.", label = "stars")
+        pyplt.plot(mag_bins, histmag_gal / mag_steps, "r.", label = "gals")
+        pyplt.plot(mag_bins, 10.0**powerlaw(mag_bins, slope_and_yint[0], slope_and_yint[1]) / mag_steps, "r--", label = "modelled power law")
+        pyplt.yscale("log")
+        pyplt.xlabel("$\\tt{MAG\_AUTO}$", fontsize = 15.0)
+        pyplt.ylabel("number / mag", fontsize = 15.0)
+        pyplt.legend(loc = 1, numpoints = 1, bbox_to_anchor=(2.2, 1.0))
+
+
+        # savefig
+        outdir_sims             = os.path.join(path2outdir, sims_nameroot + "_sims")
+        pyplt.savefig(outdir_sims + "/" + sims_nameroot + ".sims.plot.pdf")
+        pyplt.close()
+
+        print
+        print "#", "savefig:", outdir_sims + "/" + sims_nameroot + ".sims.plot.pdf"
+        print
+
+    return true_catalogs
+
+
 
 ######
 #
@@ -672,6 +1042,169 @@ class fitsimage:
         print
         
         return out_mef, out_true_cats
+
+
+    # ---
+    # ModelGalLocator
+    # ---
+    def ModelGalLocator(self,
+        path2image,
+        path2readincat,
+        psf_dict   = None,
+        stamp_size_arcsec   =   20.0,
+        mag_dict   = {"lo":20.0, "hi":25.0 },
+        hlr_dict   = {"lo":0.35 , "hi":0.75  },
+        fbulge_dict= {"lo":0.5 , "hi":0.9  },
+        q_dict     = {"lo":0.4 , "hi":1.0  },
+        pos_ang_dict={"lo":0.0 , "hi":180.0},
+        ngals_arcmin2 = 15.0,
+        nsimimages    = 50,
+        random_seed   = 234231,
+        sims_nameroot = "modgal",
+        ncpu          = 2,
+        ):
+        """
+
+        :param path2image: The absolute path to the image which you want to put the simulated sources on. This is usually the source free image (SFI), or it can also be the BnB image if you want to simulate the sources on the image where the observed BnB sources are kept. One can uses BnB image to test how the BnB sources affect the detection.
+
+        :param path2readincat: The absolute path to the image which you want to put the simulated sources on. This is usually the source free image (SFI), or it can also be the BnB image if you want to simulate the sources on the image where the observed BnB sources are kept. One can uses BnB image to test how the BnB sources affect the detection.
+
+        :param psf_dict: The psf configuration. Currently it only supports Moffat PSF with beta parameter of 4.5. ``psf_dict`` must be a dictionary in the form of ``{"moffat":{ "beta": _value_, "fwhm": _value_ } }``, where _value_ of ``fwhm`` is in the unit of arcsec. By default, ``psf_dict = {"moffat":{ "beta": 4.5, "fwhm": img_fwhm } }``.
+        
+        :param stamp_size_arcsec: The size of the stamp of each simulated source by **GalSim**. The stamp is with the size of ``stamp_size_arcsec`` x ``stamp_size_arcsec`` (``stamp_size_arcsec`` in arcsec) where the **GalSim** will simulate one single source on. By default, it is ``stamp_size_arcsec = 15.0``.
+        
+        :param mag_dict: The magnitude range which **GalSim** will simulate sources. It must be in the form of ``{"lo": _value_, "hi": _value_}``, where _value_ is expressed in magnitude. By default, it is ``mag_dict = {"lo":20.0, "hi":25.0 }``.
+        
+        :param hlr_dict: The half light radius configuration of the sources simulated by **GalSim**. It is in the unit of arcsec. It has to be in the form of ``{"lo": _value_, "high": _value_}``. By default, it is ``hlr_dict = {"lo":0.35 , "hi":0.75 }``.
+        
+        :param fbulge_dict: The configuration of the fraction of the bulge component. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and 1 means the galaxy has zero fraction of light from the disk component. By default, it is ``fbulge_dict = {"lo":0.5 , "hi":0.9  }``.
+        
+        :param q_dict: The minor-to-major axis ratio configuration of the sources simulated by **GalSim**. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and ``q = 1`` means spherical. By default, it is ``q_dict = {"lo":0.4 , "hi":1.0 }``.
+        
+        :param pos_ang_dict: The position angle configuration of the sources simulated by **GalSim**. It is in the unit of degree. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,180.0] and it is counter-clockwise with +x is 0 degree. By default, it is ``pos_ang_dict={"lo":0.0 , "hi":180.0 }``.
+        
+        :param ngals_arcmin2: The projected number of the sources simulated by **GalSim** per arcmin square. You dont want to set this number too high because it will cause the problem from blending in the source detection. However, you dont want to lose the statistic power if you set this number too low. By defualt, it is ``ngals_arcmin2 = 15.0``.
+        
+        :param nsimimages: The number of the images you want to simulate. It will be saved in the multi-extension file with the code name ``sims_nameroot``. By default, it is ``nsimimages = 50``.
+        
+        :param random_seed: The random seed of the random generator. It will be passed to **GalSim** for simulating the sources.
+        
+        :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**. By default, it is ``sims_nameroot = "buldisk"``.
+        
+        :param ncpu: The number of cpu for parallel running. By default, it is ``ncpu = 2``. Please do not set this number higher than the CPU cores you have.
+        
+        :type path2image: str
+        :type path2readincat: str
+        :type psf_dict: dict
+        :type stamp_size_arcsec: float
+        :type mag_dict: dict
+        :type hlr_dict: dict
+        :type fbulge_dict: dict
+        :type q_dict: dict
+        :type pos_ang_dict: dict
+        :type ngals_arcmin2: float
+        :type nsimimages: int
+        :type random_seed: int
+        :type sims_nameroot: str
+        :type ncpu: int
+        
+        :returns: ``out_mef`` is the list containing the simulated images and ``out_true_cats`` is the list containing the information of the mock catalogs (hence ``len(out_mef) = len(out_true_cats) = nsimimages``).
+        :rtype: list, list
+        
+        This method calls the routine ``comest.SrcPlacer.BulDiskLocator`` to put the fake sources on this image. In this case it is the galaxies consisting of buldge and disk components. The simulated sources are uniformly distributed in the CCD ( so are in all the provided configuration) with the number density of ``ngals_arcmin2``.
+        
+        .. seealso:: ``comest.SrcPlacer.BulDiskLocator`` for more details about the configuration.
+        
+            
+        """
+        # assign the value and sanitize
+        zeropoint   =   self.img_zp     # zeropoint
+        # assign psf
+        if  psf_dict  is None:
+            psf_dict    =   {"moffat":{ "beta": 4.5, "fwhm": self.img_fwhm } }
+
+        # readin the sims catalog (produced by the standalone program) and only pass the non-header part
+        if  not  os.path.isfile(path2readincat): raise IOError("The file", path2readincat, "does not exist. Please check.")
+        sim_fits     =   pyfits.open(path2readincat)
+        # update nsimimages - minus the header
+        nsimimages   =   len(sim_fits) - 1 
+        # extract the data
+        readincat    =   [ np.copy(sim_fits[1 + nimage].data) for nimage in range(nsimimages) ]
+        # close
+        sim_fits.close()
+
+        # diagnostic output
+        print
+        print "#", "Using ModelGalLocator to put galaxies (bulge + disk) on the targeted image..."
+        print "#", "path2image:", path2image
+        print "#", "path2readincat:", path2readincat
+        print "#", "psf_dict:", psf_dict
+        print "#", "stamp_size_arcsec:", stamp_size_arcsec
+        print "#", "mag_dict:", mag_dict
+        print "#", "hlr_dict:", hlr_dict
+        print "#", "fbulge_dict:", fbulge_dict
+        print "#", "q_dict:", q_dict
+        print "#", "pos_ang_dict:", pos_ang_dict
+        print "#", "ngals_arcmin2:", ngals_arcmin2
+        print "#", "nsimimages:", nsimimages
+        print "#", "random_seed:", random_seed
+        print "#", "sims_nameroot:", sims_nameroot
+        print "#", "ncpu:", ncpu
+        print
+
+        # timing
+        t1      =       time.time()
+
+        # run it and save it as the file.
+        out_mef  = SrcPlacer.ModelGalLocator(
+            path2image          = path2image,
+            readincat           = readincat,
+            zeropoint           = zeropoint,
+            psf_dict            = psf_dict,
+            stamp_size_arcsec   = stamp_size_arcsec,
+            mag_dict            = mag_dict,
+            hlr_dict            = hlr_dict,
+            fbulge_dict         = fbulge_dict,
+            q_dict              = q_dict,
+            pos_ang_dict        = pos_ang_dict,
+            ngals_arcmin2       = ngals_arcmin2,
+            nsimimages          = nsimimages,
+            random_seed         = random_seed,
+            ncpu                = ncpu,
+            )
+
+        # timing
+        t2      =       time.time()
+
+        # diagnostic
+        print
+        print "#", "Total time takes:", t2 - t1
+        print
+        
+        # make sure dir exists
+        outdir_sims             = os.path.join(self.path2outdir, sims_nameroot + "_sims")
+        if os.path.isdir( outdir_sims ) == False: os.makedirs(outdir_sims)
+        # save
+        # for mef image
+        SrcPlacer.galsim.fits.writeMulti(out_mef, outdir_sims + "/" + sims_nameroot + ".sims.fits")
+        ## for mef table
+        #phdulist = pyfits.PrimaryHDU( header = pyfits.BinTableHDU(data = out_true_cats[0]).header ) # primary table
+        #list4fits= [phdulist]                                                                       # put it in the list first
+        #for ntable in  xrange(nsimimages):                                                          # append all the tables
+        #    list4fits.append( pyfits.BinTableHDU(data = out_true_cats[ntable]) )                    # append all the tables
+        #thdulist = pyfits.HDUList(list4fits)                                                        # convert it into table hdulist
+        #thdulist.writeto(outdir_sims + "/" + sims_nameroot + ".sims.cat.fits", clobber = True)      # save
+        
+        # diagnostic
+        print
+        print "#", "sims image:",
+        print outdir_sims + "/" + sims_nameroot + ".sims.fits"
+        #print "#", "sims cat:",
+        #print outdir_sims + "/" + sims_nameroot + ".sims.cat.fits"
+        print
+        
+        #return out_mef, out_true_cats
+        return out_mef
 
     # ---
     # RealGalLocator
