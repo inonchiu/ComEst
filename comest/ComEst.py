@@ -1973,9 +1973,9 @@ class fitsimage:
                 #                        y_edges = y_edges, 
                 #                        new_x_edges = np.append(0.5, np.arange(0,self.x_npixels) + 1 + 0.5 ), 
                 #                        new_y_edges = np.append(0.5, np.arange(0,self.y_npixels) + 1 + 0.5 ) )
-                temp_fits_data       =   np.copy( fcom_of_xy[nnm] )
-                temp_fits_true       =   np.copy( true_dict["hist2d"][nnm] )
-                temp_fits_matched    =   np.copy( matched_paris_dict["hist2d"][nnm] )
+                temp_fits_data       =   np.copy( fcom_of_xy[nnm] ).T
+                temp_fits_true       =   np.copy( true_dict["hist2d"][nnm] ).T
+                temp_fits_matched    =   np.copy( matched_paris_dict["hist2d"][nnm] ).T
                 # if it is the primary hdu or not
                 if nnm == 0:
                     # append this fits
@@ -2189,8 +2189,8 @@ class fitsimage:
                 #                        y_edges = y_edges, 
                 #                        new_x_edges = np.append(0.5, np.arange(0,self.x_npixels) + 1 + 0.5 ), 
                 #                        new_y_edges = np.append(0.5, np.arange(0,self.y_npixels) + 1 + 0.5 ) )
-                temp_fits_data       =   np.copy( fpur_of_xy[nnm] )
-                temp_fits_allse      =   np.copy( matched_pairs_dict["hist2d"][nnm] + ghost_dict["hist2d"][nnm] )
+                temp_fits_data       =   np.copy( fpur_of_xy[nnm] ).T
+                temp_fits_allse      =   np.copy( matched_pairs_dict["hist2d"][nnm] + ghost_dict["hist2d"][nnm] ).T
                 # if it is the primary hdu or not
                 if nnm == 0:
                     # append this fits
