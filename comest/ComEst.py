@@ -1500,7 +1500,7 @@ class fitsimage:
     # ---
     # Run SE on sims
     # ---
-    def RunSEforSims(self, sims_nameroot, sims_sex_args = "", path2maskmap = None, outputcheckimage = False, tol_fwhm = 1.0):
+    def RunSEforSims(self, sims_nameroot, sims_sex_args = "", path2maskmap = None, outputcheckimage = False, tol_fwhm = 1.0, ztol = 1.0):
         """
 
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**.
@@ -1512,12 +1512,14 @@ class fitsimage:
         :param outputcheckimage: Whether or not **SExtractor** will output the check-images (as the diagnostic output) and save them in the disk. By default, it is ``outputcheckimage = False``.
         
         :param tol_fwhm: The multiplicative factor of ``img_fwhm`` used in matching the **SExtractor** to the mock catalog. By default, it is ``tol_fwhm = 1`` meaning we match all the **SExtractor** objects to the mock catalog within 1 ``img_fwhm``.
+        :param ztol: the tolerance of magnitude in matching. The objects are considered to ba a pair of match if the distance separation < tol_fwhm * fwhm and abs(mag_auto - mag_true) < ztol. Default is 1.0.
         
         :type sims_nameroot: str
         :type sims_sex_args: str
         :type path2maskmap: str
         :type outputcheckimage: bool
         :type tol_fwhm: float
+        :type ztol: float
         
         :returns: ``stdout``. The standard output status of the run. ``stdout = 0`` for successful run.
         :rtype: int
@@ -1683,7 +1685,6 @@ class fitsimage:
                 y2 = se_out_cat[nn_mef]["YWIN_IMAGE"],
                 tol= tol_fwhm * (self.img_fwhm / self.img_pixel_scale),
                 nnearest=1)
-            """
             i_am_matched_in_se_temp, i_am_matched_in_true_temp, i_am_distance_in_pixel_temp        = \
                 py2dmatch.carte2dmatch(
                 x2 = true_cat[nn_mef]["x_true"],
@@ -1692,6 +1693,18 @@ class fitsimage:
                 y1 = se_out_cat[nn_mef]["YWIN_IMAGE"],
                 tol= tol_fwhm * (self.img_fwhm / self.img_pixel_scale),
                 nnearest=1)
+            """
+            i_am_matched_in_se_temp, i_am_matched_in_true_temp, i_am_distance_in_pixel_temp, _        = \
+                py2dmatch.carte2d_and_z_match(
+                x2 = true_cat[nn_mef]["x_true"],
+                y2 = true_cat[nn_mef]["y_true"],
+                z2 = true_cat[nn_mef]["mag_true"],
+                x1 = se_out_cat[nn_mef]["XWIN_IMAGE"],
+                y1 = se_out_cat[nn_mef]["YWIN_IMAGE"],
+                z1 = se_out_cat[nn_mef]["MAG_AUTO"  ],
+                stol= tol_fwhm * (self.img_fwhm / self.img_pixel_scale),
+                ztol= ztol)
+                #ztol= se_out_cat[nn_mef]["MAGERR_AUTO"])
             # Consider the magnitude matching by using sigma_cliping
             # That is, the se magnitude and true magnitude has to be within 3 sigma 
             # to be considered as a mathced pair - this can prevent from the mismatch.
@@ -1705,7 +1718,7 @@ class fitsimage:
                                 varfunc=np.var,
                                 axis=None, copy=True)
             returned_masked =   filtered_data.mask.copy()
-            '''
+            
             returned_masked =   py2dmatch.Adpative_sigma_clip(
                     mag1 = se_out_cat[nn_mef]["MAG_AUTO"][ i_am_matched_in_se_temp ],
                     mag2 = true_cat[  nn_mef]["mag_true"][ i_am_matched_in_true_temp ],
@@ -1713,12 +1726,19 @@ class fitsimage:
                     iters= 1,
                     cenfunc=lambda x: 0.0,
                     varfunc=np.var)
+            '''
             # save them in the array.
+            '''
             i_am_matched_in_true.append( np.copy(i_am_matched_in_true_temp[ ~returned_masked ]) )
             i_am_matched_in_se.append( np.copy(i_am_matched_in_se_temp[ ~returned_masked ]) )
             i_am_distance_in_pixel.append( np.copy(i_am_distance_in_pixel_temp[ ~returned_masked ]) )
+            '''
+            i_am_matched_in_true.append( np.copy(i_am_matched_in_true_temp) )
+            i_am_matched_in_se.append( np.copy(i_am_matched_in_se_temp) )
+            i_am_distance_in_pixel.append( np.copy(i_am_distance_in_pixel_temp) )
             # clean
-            del i_am_matched_in_se_temp, i_am_matched_in_true_temp, i_am_distance_in_pixel_temp, returned_masked
+            #del i_am_matched_in_se_temp, i_am_matched_in_true_temp, i_am_distance_in_pixel_temp, returned_masked
+            del i_am_matched_in_se_temp, i_am_matched_in_true_temp, i_am_distance_in_pixel_temp
         
         # diagnostic
         print

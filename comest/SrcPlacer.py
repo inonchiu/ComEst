@@ -251,8 +251,8 @@ def _PntSrcLocator_single(
         xcen    =   ud() * full_image_xsize
         ycen    =   ud() * full_image_ysize
         # the pixel of gal center in the full image
-        ixcen   =   int(floor(xcen+0.5))
-        iycen   =   int(floor(ycen+0.5))
+        ixcen   =   int(floor(xcen+1.0))
+        iycen   =   int(floor(ycen+1.0))
         # stamp size
         stamp_bounds = galsim.BoundsI(ixcen-0.5*stamp_size, ixcen+0.5*stamp_size-1,
                                       iycen-0.5*stamp_size, iycen+0.5*stamp_size-1)
@@ -433,8 +433,8 @@ def _BulDiskLocator_single(
         xcen    =   ud() * full_image_xsize
         ycen    =   ud() * full_image_ysize
         # the pixel of gal center in the full image
-        ixcen   =   int(floor(xcen+0.5))
-        iycen   =   int(floor(ycen+0.5))
+        ixcen   =   int(floor(xcen+1.0))
+        iycen   =   int(floor(ycen+1.0))
         # stamp size
         stamp_bounds = galsim.BoundsI(ixcen-0.5*stamp_size, ixcen+0.5*stamp_size-1,
                                       iycen-0.5*stamp_size, iycen+0.5*stamp_size-1)
@@ -635,8 +635,10 @@ def _ModelGalLocator_single(
         xcen    =   x_true[k]
         ycen    =   y_true[k]
         # the pixel of gal center in the full image
-        ixcen   =   int(floor(xcen+0.5))
-        iycen   =   int(floor(ycen+0.5))
+        #ixcen   =   int(floor(xcen+0.5))
+        #iycen   =   int(floor(ycen+0.5))
+        ixcen   =   int(floor(xcen+1.0))
+        iycen   =   int(floor(ycen+1.0))
         # stamp size
         stamp_bounds = galsim.BoundsI(ixcen-0.5*stamp_size, ixcen+0.5*stamp_size-1,
                                       iycen-0.5*stamp_size, iycen+0.5*stamp_size-1)
@@ -832,8 +834,8 @@ def _RealGalLocator_single(
         xcen    =   ud() * full_image_xsize
         ycen    =   ud() * full_image_ysize
         # the pixel of gal center in the full image
-        ixcen   =   int(floor(xcen+0.5))
-        iycen   =   int(floor(ycen+0.5))
+        ixcen   =   int(floor(xcen+1.0))
+        iycen   =   int(floor(ycen+1.0))
         # stamp size
         stamp_bounds = galsim.BoundsI(ixcen-0.5*stamp_size, ixcen+0.5*stamp_size-1,
                                       iycen-0.5*stamp_size, iycen+0.5*stamp_size-1)

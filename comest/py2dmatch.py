@@ -21,7 +21,7 @@ except ImportError:
 def carte2dmatch(x1, y1, x2, y2, tol= None, nnearest=1):
     """
     Finds matches in one catalog to another.
- 
+
     Parameters
     x1 : array-like
         Cartesian coordinate x of the first catalog
@@ -39,7 +39,7 @@ def carte2dmatch(x1, y1, x2, y2, tol= None, nnearest=1):
         second nearest neighbor, etc.  Particularly useful if you want to get
         the nearest *non-self* neighbor of a catalog.  To do this, use:
         ``carte2dmatch(x, y, x, y, nnearest=2)``
- 
+
     Returns
     -------
     idx1 : int array
@@ -50,32 +50,32 @@ def carte2dmatch(x1, y1, x2, y2, tol= None, nnearest=1):
         larger than `x1`/`y1`.
     ds : float array
         Distance (in the unit of the cartesian coordinate) between the matches
- 
- 
- 
+
+
+
     """
     # sanitize
     x1 = np.array(x1, copy=False)
     y1 = np.array(y1, copy=False)
     x2 = np.array(x2, copy=False)
     y2 = np.array(y2, copy=False)
- 
+
     # check
     if x1.shape != y1.shape:
         raise ValueError('x1 and y1 do not match!')
     if x2.shape != y2.shape:
         raise ValueError('x2 and y2 do not match!')
- 
+
     # this is equivalent to, but faster than just doing np.array([x1, y1, z1])
     coords1 = np.empty((x1.size, 2))
     coords1[:, 0] = x1
     coords1[:, 1] = y1
- 
+
     # this is equivalent to, but faster than just doing np.array([x1, y1, z1])
     coords2 = np.empty((x2.size, 2))
     coords2[:, 0] = x2
     coords2[:, 1] = y2
- 
+
     # set kdt for coord2
     kdt = KDT(coords2)
     if nnearest == 1:
@@ -90,15 +90,134 @@ def carte2dmatch(x1, y1, x2, y2, tol= None, nnearest=1):
 
     # index for coord1
     idxs1 = np.arange(x1.size)
- 
+
     if tol is not None:
         msk = ds < tol
         idxs1 = idxs1[msk]
         idxs2 = idxs2[msk]
         ds = ds[msk]
- 
+
     return idxs1, idxs2, ds
 
+
+# ---
+# 3d match
+# ---
+def carte2d_and_z_match(x1, y1, z1, x2, y2, z2, ztol, stol):
+    """
+    Finds matches in one catalog to another.
+
+    Parameters
+    x1 : array-like
+        Cartesian coordinate x of the first catalog
+    y1 : array-like
+        Cartesian coordinate y of the first catalog (shape of array must match `x1`)
+    z1 : array-like
+        Cartesian coordinate z of the first catalog (shape of array must match `x1`)
+    x2 : array-like
+        Cartesian coordinate x of the second catalog
+    y2 : array-like
+        Cartesian coordinate y of the second catalog (shape of array must match `x2`)
+    z2 : array-like
+        Cartesian coordinate z of the second catalog (shape of array must match `x2`)
+    ztol: float or array-like
+        The tolarance in z direction. Its shape must match to `x1` if it is an array.
+    stol: float or None, optional
+        How close (in the unit of the cartesian coordinate) a match has to be to count as a match.  If None,
+        all nearest neighbors for the first catalog will be returned.
+    nnearest : int, optional
+        The nth neighbor to find.  E.g., 1 for the nearest nearby, 2 for the
+        second nearest neighbor, etc.  Particularly useful if you want to get
+        the nearest *non-self* neighbor of a catalog.  To do this, use:
+        ``carte2dmatch(x, y, x, y, nnearest=2)``
+
+    Returns
+    -------
+    idx1 : int array
+        Indecies into the first catalog of the matches. Will never be
+        larger than `x1`/`y1`.
+    idx2 : int array
+        Indecies into the second catalog of the matches. Will never be
+        larger than `x1`/`y1`.
+    ds : float array
+        Distance (in the unit of the cartesian coordinate) between the matches
+    dz : float array
+        Distance (in the unit of the cartesian coordinate) between the matches
+
+
+    """
+    # sanitize
+    x1   = np.array(x1, copy=False)
+    y1   = np.array(y1, copy=False)
+    z1   = np.array(z1, copy=False)
+    x2   = np.array(x2, copy=False)
+    y2   = np.array(y2, copy=False)
+    z2   = np.array(z2, copy=False)
+
+    # check
+    if x1.shape != y1.shape or x1.shape != z1.shape:
+        raise ValueError('x1 and y1/z1 do not match!')
+    if x2.shape != y2.shape or x2.shape != z2.shape:
+        raise ValueError('x2 and y2/z2 do not match!')
+
+    # this is equivalent to, but faster than just doing np.array([x1, y1])
+    coords1 = np.empty((x1.size, 2))
+    coords1[:, 0] = x1
+    coords1[:, 1] = y1
+
+    # this is equivalent to, but faster than just doing np.array([x1, y1])
+    coords2 = np.empty((x2.size, 2))
+    coords2[:, 0] = x2
+    coords2[:, 1] = y2
+
+    # set kdt for coord2
+    kdt = KDT(coords2)
+
+    # ---
+    # Match using kdt
+    # ---
+    idxs2_within_balls   = kdt.query_ball_point(coords1, stol)                    # find the neighbors within a ball
+    n_within_ball        = np.array(map(len, idxs2_within_balls), dtype = np.int) # counts within each ball
+    zero_within_ball     = np.where( n_within_ball == 0)[0]                       # find which one does not have neighbors
+    nonzero_within_ball  = np.where( n_within_ball >  0)[0]                       # find which one has neighbors
+    
+    # declare the distance / idxs2 for each element in nonzero_within_ball
+    # I use no-brain looping here, slow but seems to be acceptable
+    dz_within_ball       = []   # the distance
+    idxs2                = []
+    for i in nonzero_within_ball:
+        #print i, len(idxs2_within_balls[i]), z1[i], z2[ idxs2_within_balls[i] ]
+        # Another sub-kdt within a ball, but this times we use kdt.query to find the nearest one
+        dz_temp, matched_id_temp   = KDT( np.transpose([ z2[ idxs2_within_balls[i] ] ]) ).query( np.transpose([ z1[i] ]) )
+        matched_id_temp            = idxs2_within_balls[i][ matched_id_temp ]
+        # append
+        dz_within_ball.append(dz_temp)      # the distance of the nearest neighbor within the ball
+        idxs2.append(matched_id_temp)       # the index in array2 of the nearest neighbor within the ball
+
+    # index for coord1 - only using the object with non-zero neighbor in the ball
+    idxs1           = np.arange(x1.size)[ nonzero_within_ball ]
+    idxs2           = np.array(idxs2, dtype = np.int)
+    dz_within_ball  = np.array(dz_within_ball, dtype = np.float)
+
+    # clean
+    del dz_temp, matched_id_temp
+
+    # msk to clean the object with dz > ztol
+    ztol            = np.array(ztol, ndmin=1)
+    if    len(ztol) ==  1:
+        msk             = ( dz_within_ball < ztol )
+    elif  len(ztol) ==  len(x1):
+        msk             = ( dz_within_ball < ztol[ nonzero_within_ball ] )
+    else:
+        raise ValueError("The length of ztol has to be 1 (float) or as the same as input x1/y1. len(ztol):", len(ztol))
+
+    # only keep the matches which have dz < ztol
+    idxs1           = idxs1[ msk ]
+    idxs2           = idxs2[ msk ]
+    ds              = np.hypot( x1[idxs1] - x2[idxs2], y1[idxs1] - y2[idxs2] )
+    dz              = dz_within_ball[ msk ]
+    
+    return idxs1, idxs2, ds, dz
 
 
 
@@ -316,3 +435,64 @@ def Adpative_sigma_clip(mag1, mag2, sig=3.0, iters=1, cenfunc=np.ma.median, varf
             returned_mask[ i_am_in_this_bin ] = filtered_data.mask.copy()
 
     return returned_mask
+
+
+
+
+
+if     __name__  ==  "__main__":
+    x2  =   np.random.uniform(0.0, 1000.0, 50000)
+    y2  =   np.random.uniform(0.0, 1000.0, 50000)
+    z2  =   np.random.uniform(15.0, 30.0, 50000)
+
+    x1  =   np.random.normal(loc = x2, scale = 1.0 / 0.26)
+    y1  =   np.random.normal(loc = y2, scale = 1.0 / 0.26)
+    z1  =   np.random.normal(loc = z2, scale = 0.1)
+    z1err=  np.random.uniform(low = 0.085, high = 0.115, size = len(z1))
+
+    import matplotlib.pyplot as pyplt
+    '''
+    # this is equivalent to, but faster than just doing np.array([x1, y1, z1])
+    coords1 = np.empty((x1.size, 2))
+    coords1[:, 0] = x1
+    coords1[:, 1] = y1
+    
+    # this is equivalent to, but faster than just doing np.array([x1, y1, z1])
+    coords2 = np.empty((x2.size, 2))
+    coords2[:, 0] = x2
+    coords2[:, 1] = y2
+    
+    # set kdt for coord2
+    kdt   = KDT(coords2)
+
+    # ---
+    # start from here
+    # ---
+    idxs2_within_balls   = kdt.query_ball_point(coords1, 3.0 / 0.26)              # find the neighbors within a ball
+    n_within_ball        = np.array(map(len, idxs2_within_balls), dtype = np.int) # counts within each ball
+    zero_within_ball     = np.where( n_within_ball == 0)[0]                       # find which one does not have neighbors
+    nonzero_within_ball  = np.where( n_within_ball >  0)[0]                       # find which one has neighbors
+    
+    dz_within_ball       = []   # the distance
+    idxs2                = []
+    
+    for i in nonzero_within_ball:
+        dz_temp, matched_id_temp   = KDT( np.transpose([ z2[ idxs2_within_balls[i] ] ]) ).query( np.transpose([ z1[i] ]) )
+        matched_id_temp            = idxs2_within_balls[i][ matched_id_temp ]
+        dz_within_ball.append(dz_temp)
+        idxs2.append(matched_id_temp)
+
+    # index for coord1
+    idxs1           = np.arange(x1.size)[ nonzero_within_ball ]
+    idxs2           = np.array(idxs2, dtype = np.int)
+    dz_within_ball  = np.array(dz_within_ball, dtype = np.float)
+    '''
+    A = carte2d_and_z_match(x1 = x1, y1 = y1, z1 = z1, x2 = x2, y2 = y2, z2 = z2, stol = 1.0 / 0.26, ztol = 3.0 * z1err )
+
+
+
+
+
+
+
+
