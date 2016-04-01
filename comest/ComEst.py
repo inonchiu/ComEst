@@ -2157,7 +2157,7 @@ class fitsimage:
             # save the result as a function of position - this require reading in the simulated image.
             path2sims_img   =   os.path.join(outdir_sims, sims_nameroot + ".sims.fits")
             path2outmap     =   os.path.join(outdir_sims, sims_nameroot + ".sims.fpurxy.fits")
-            path2outallse   =   os.path.join(outdir_sims, sims_nameroot + ".nsrc_allse_xy.fits")
+            path2outallse   =   os.path.join(outdir_sims, sims_nameroot + ".sims.nsrc_allse_xy.fits")
             # read in the fits image to see how many extension of that MEF.
             readinheader    =   pyfits.getheader(path2sims_img)
             # declare a list
