@@ -1,4 +1,4 @@
-# ComEst: a Completeness Estimator of Charge-Coupled Device (CCD) Images
+# ComEst: a Completeness Estimator of Source Extraction on Astronomical Imaging
 
 Authors: 
 [I-Non Chiu](inonchiu@usm.lmu.de), [Shantanu Desai](shantanu@usm.lmu.de), [Jiayi Liu](astro.jiayi@googlemail.com)
