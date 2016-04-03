@@ -47,10 +47,10 @@ ncpu            =       10      # the number of cpu cores used in simulation
 nset            =       10      # the number of the sets, each set should contain nsimimages simulated images
 
 # decide which mode to use for simulation
-use_modgal      =       True
-use_bulgal      =       True
-use_reagal      =       True
-use_pntsrc      =       True
+use_modgal      =       True    # galaxies distribution modelled from SE catalog
+use_bulgal      =       True    # bul + disk galaxies simulation
+use_reagal      =       True    # galaxies draw from COSMOS
+use_pntsrc      =       True    # point source simulation
 
 # set the random seed
 np.random.seed(232)
