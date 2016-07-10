@@ -692,8 +692,6 @@ def DrawCatFromLib(
     """
     # sanitize / extract the value
     img_pixel_scale     =       float(img_pixel_scale)                  # arcsec/pixel
-    hlr_lo              =       hlr_dict["lo"] / img_pixel_scale        # in pixel
-    hlr_hi              =       hlr_dict["hi"] / img_pixel_scale        # in pixel
     fbulge_lo           =       fbulge_dict["lo"]                       # bulge fraction
     fbulge_hi           =       fbulge_dict["hi"]                       # bulge fraction
     q_lo                =       q_dict["lo"]                            # axis ratio
@@ -708,7 +706,6 @@ def DrawCatFromLib(
     # derive some necessary variables
     mag_bins            =       0.5*(mag_edges[1:] + mag_edges[:-1])        # the mag_bins used for hist1d
     mag_steps           =       mag_edges[1:] - mag_edges[:-1]              # the mag_bins used for hist1d
-
 
     # ---
     # read in lib 
@@ -726,7 +723,6 @@ def DrawCatFromLib(
     if    mag_lo < np.min(maglib) or mag_hi > np.max(maglib):
         raise ValueError("the mag_lo or mag_hi is ourside the library.")
 
-
     # calculate the Ngals
     Ngals               =       ngals_arcmin2 * (xmax - xmin) * (ymax - ymin) * img_pixel_scale**2 * (1.0/60.0)**2
     Ngals               =       np.int( Ngals )
@@ -737,11 +733,10 @@ def DrawCatFromLib(
     np.random.seed(random_seed)
     # simulate the counts per magnitude - this has the shape of (nsimimages, len(mag_bins[use_me_to_sim]))
     for nimage in range(nsimimages):
-        selected_indice         =   np.random.choice( xrange(len(maglib)), size = Ngals )
+        nobjs                   =   np.int( np.random.poisson(lam = Ngals) )
+        selected_indice         =   np.random.choice( xrange(len(maglib)), size = nobjs )
         mags                    =   np.copy( maglib[selected_indice] )
         hlrs                    =   np.copy( hlrlib[selected_indice] )
-        # change np.concatenate to hstack to avoid error in the older version of numpy
-        nobjs                   =   len(mags)
         fbulges                 =   np.random.uniform(fbulge_lo , fbulge_hi , size = nobjs)
         qs                      =   np.random.uniform(q_lo      , q_hi      , size = nobjs)
         pos_angs                =   np.random.uniform(pos_ang_lo, pos_ang_hi, size = nobjs)
