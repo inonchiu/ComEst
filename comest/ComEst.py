@@ -703,10 +703,6 @@ def DrawCatFromLib(
     xmin, xmax          =       x_dict["lo"], x_dict["hi"]          # derive the x range in pixel
     ymin, ymax          =       y_dict["lo"], y_dict["hi"]          # derive the y range in pixel
 
-    # derive some necessary variables
-    mag_bins            =       0.5*(mag_edges[1:] + mag_edges[:-1])        # the mag_bins used for hist1d
-    mag_steps           =       mag_edges[1:] - mag_edges[:-1]              # the mag_bins used for hist1d
-
     # ---
     # read in lib 
     # ---
@@ -719,10 +715,6 @@ def DrawCatFromLib(
     maglib              =       np.copy( maglib[use_me   ] )
     hlrlib              =       np.copy( hlrlib[use_me   ] )
 
-    # check
-    if    mag_lo < np.min(maglib) or mag_hi > np.max(maglib):
-        raise ValueError("the mag_lo or mag_hi is ourside the library.")
-
     # calculate the Ngals
     Ngals               =       ngals_arcmin2 * (xmax - xmin) * (ymax - ymin) * img_pixel_scale**2 * (1.0/60.0)**2
     Ngals               =       np.int( Ngals )
@@ -731,7 +723,7 @@ def DrawCatFromLib(
     # set the random seed
     # ---
     np.random.seed(random_seed)
-    # simulate the counts per magnitude - this has the shape of (nsimimages, len(mag_bins[use_me_to_sim]))
+    true_catalogs           =   {}
     for nimage in range(nsimimages):
         nobjs                   =   np.int( np.random.poisson(lam = Ngals) )
         selected_indice         =   np.random.choice( xrange(len(maglib)), size = nobjs )
