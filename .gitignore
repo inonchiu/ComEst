@@ -22,3 +22,5 @@ CVS/Entries
 CVS/Repository
 
 comest/templates/filters/CVS/Entries
+
+*.swp

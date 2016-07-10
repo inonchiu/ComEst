@@ -626,6 +626,186 @@ def AnalysisSEcat(
     return true_catalogs
 
 
+# ---
+# The standalone function to draw input catalog
+# ---
+def DrawCatFromLib(
+    path2lib,
+    img_pixel_scale     = 0.26,
+    mag_dict            = {"lo":19.0, "hi":25.0 },
+    fbulge_dict         = {"lo":0.5 , "hi":0.9  },
+    q_dict              = {"lo":0.4 , "hi":1.0  },
+    pos_ang_dict        = {"lo":0.0 , "hi":180.0},
+    x_dict              = {"lo":1.0 , "hi":100.0},
+    y_dict              = {"lo":1.0 , "hi":100.0},
+    ngals_arcmin2       = 40.0,
+    nsimimages          = 2,
+    random_seed         = 234231,
+    path2outdir         = ".",
+    sims_nameroot       = "buldisk",
+    ):
+    """
+    :param path2lib: The absolute path to the library of the catalog, as the input catalog of this routine. It has to be in fits format (FITS_LDAC). It has to contain at least the MAG_AUTO/FLUX_RADIUS/CLASS_STAR/XWIN_IMAGE/YWIN_IMAGE columns.
+
+    :param img_pixel_scale: The pixel scale of the observed image. It is in the unit of arcsec/pixel. Currently **ComEst** does not support reading pixel scale from the header while loading in the image.
+
+    :param mag_dict: the magnitude range we simulate the galaxies. The magnitude distribution will be followed by the modelled power law. Default is ``{"lo":19.0, "hi":25.0 }``.
+
+    :param fbulge_dict: The configuration of the fraction of the bulge component. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and 1 means the galaxy has zero fraction of light from the disk component. By default, it is ``fbulge_dict = {"lo":0.5 , "hi":0.9  }``.
+
+    :param q_dict: The minor-to-major axis ratio configuration of the sources simulated by **GalSim**. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and ``q = 1`` means spherical. By default, it is ``q_dict = {"lo":0.4 , "hi":1.0 }``.
+
+    :param pos_ang_dict: The position angle configuration of the sources simulated by **GalSim**. It is in the unit of degree. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,180.0] and it is counter-clockwise with +x is 0 degree. By default, it is ``pos_ang_dict={"lo":0.0 , "hi":180.0 }``.
+
+    :param x_dict, y_dixt: The x and y coordinate boundary.
+
+    :param ngals_arcmin2: The projected number of the sources simulated by **GalSim** per arcmin square. You dont want to set this number too high because it will cause the problem from blending in the source detection. However, you dont want to lose the statistic power if you set this number too low. By defualt, it is ``ngals_arcmin2 = 15.0``.
+
+    :param nsimimages: The number of the images you want to simulate. It will be saved in the multi-extension file with the code name ``sims_nameroot``. By default, it is ``nsimimages = 50``.
+
+    :param random_seed: The random seed of the random generator. It will be passed to **GalSim** for simulating the sources.
+
+    :param path2outdir: The absolute path to the output directory. All the files created by **ComEst** are saved in this directory. **ComEst** will create ``path2outdir`` if ``path2outdir`` does not exist (therefore please make sure you have the permission to create such directory).
+
+    :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**. By default, it is ``sims_nameroot = "buldisk"``.
+
+    :type path2lib: str
+    :type img_pixel_scale: float
+    :type mag_dict: dict
+    :type fbulge_dict: dict
+    :type q_dict: dict
+    :type pos_ang_dict: dict
+    :type x_dict: dict
+    :type y_dict: dict
+    :type ngal_arcmin2: dict
+    :type nsimimages: int
+    :type random_seed: int
+    :type path2outdir: str
+    :type sims_nameroot: str
+
+    :returns: ``out_true_cats`` is the list containing the information of the mock catalogs (hence ``len(out_true_cats) = nsimimages``).
+    :rtype: list
+
+    This is a standalone function to draw the sample of galaxies.
+    In the end, the output catalogs are saved in the disk and given the nameroot of ``sims_nameroot``.
+
+    """
+    # sanitize / extract the value
+    img_pixel_scale     =       float(img_pixel_scale)                  # arcsec/pixel
+    hlr_lo              =       hlr_dict["lo"] / img_pixel_scale        # in pixel
+    hlr_hi              =       hlr_dict["hi"] / img_pixel_scale        # in pixel
+    fbulge_lo           =       fbulge_dict["lo"]                       # bulge fraction
+    fbulge_hi           =       fbulge_dict["hi"]                       # bulge fraction
+    q_lo                =       q_dict["lo"]                            # axis ratio
+    q_hi                =       q_dict["hi"]                            # axis ratio
+    pos_ang_lo          =       pos_ang_dict["lo"]                      # position angle
+    pos_ang_hi          =       pos_ang_dict["hi"]                      # position angle
+    mag_lo              =       mag_dict["lo"]                          # the magnitude range we simulate the galaxies
+    mag_hi              =       mag_dict["hi"]                          # the magnitude range we simulate the galaxies
+    xmin, xmax          =       x_dict["lo"], x_dict["hi"]          # derive the x range in pixel
+    ymin, ymax          =       y_dict["lo"], y_dict["hi"]          # derive the y range in pixel
+
+    # derive some necessary variables
+    mag_bins            =       0.5*(mag_edges[1:] + mag_edges[:-1])        # the mag_bins used for hist1d
+    mag_steps           =       mag_edges[1:] - mag_edges[:-1]              # the mag_bins used for hist1d
+
+
+    # ---
+    # read in lib 
+    # ---
+    readincat           =       pyfits.getdata(path2lib, ext = -1)
+    # assign values
+    maglib              =       readincat["mag_true"        ] # hardcoded name
+    hlrlib              =       readincat["hlr_true[arcsec]"] # hardcoded name
+    # use_me_to_draw
+    use_me              =       (mag_lo <= maglib) & (maglib <= mag_hi)
+    maglib              =       np.copy( maglib[use_me   ] )
+    hlrlib              =       np.copy( hlrlib[use_me   ] )
+
+    # check
+    if    mag_lo < np.min(maglib) or mag_hi > np.max(maglib):
+        raise ValueError("the mag_lo or mag_hi is ourside the library.")
+
+
+    # calculate the Ngals
+    Ngals               =       ngals_arcmin2 * (xmax - xmin) * (ymax - ymin) * img_pixel_scale**2 * (1.0/60.0)**2
+    Ngals               =       np.int( Ngals )
+
+    # ---
+    # set the random seed
+    # ---
+    np.random.seed(random_seed)
+    # simulate the counts per magnitude - this has the shape of (nsimimages, len(mag_bins[use_me_to_sim]))
+    for nimage in range(nsimimages):
+        selected_indice         =   np.random.choice( xrange(len(maglib)), size = Ngals )
+        mags                    =   np.copy( maglib[selected_indice] )
+        hlrs                    =   np.copy( hlrlib[selected_indice] )
+        # change np.concatenate to hstack to avoid error in the older version of numpy
+        nobjs                   =   len(mags)
+        fbulges                 =   np.random.uniform(fbulge_lo , fbulge_hi , size = nobjs)
+        qs                      =   np.random.uniform(q_lo      , q_hi      , size = nobjs)
+        pos_angs                =   np.random.uniform(pos_ang_lo, pos_ang_hi, size = nobjs)
+        xx                      =   np.random.uniform(xmin      , xmax      , size = nobjs)
+        yy                      =   np.random.uniform(ymin      , ymax      , size = nobjs)
+        # update
+        true_catalogs.update({nimage:
+                             np.core.records.fromarrays([
+                             np.copy(xx), np.copy(yy),
+                             np.copy(mags),
+                             np.copy(hlrs),
+                             np.copy(hlrs) * img_pixel_scale,
+                             np.copy(fbulges),
+                             np.copy(qs),
+                             np.copy(pos_angs)],
+                             names = "x_true,y_true,mag_true,hlr_true[pixel],hlr_true[arcsec],fbulge_true,q_true,pos_ang[deg]")
+                             })
+        # clean
+        del mags, nobjs, hlrs, fbulges, qs, pos_angs, xx, yy
+
+
+    # ---
+    # Diagnostic output
+    # ---
+    print
+    print "#", "Analysis done."
+    print "#", "path2lib:", path2lib
+    print
+    print "#", "magnitude range used for simulating galaxies:", mag_dict
+    print "#", "(xmin, xmax):", xmin, xmax, "[pixel]"
+    print "#", "(ymin, ymax):", ymin, ymax, "[pixel]"
+    print "#", "fbulge range used for simulating galaxies:", fbulge_dict
+    print "#", "q range used for simulating galaxies:", q_dict
+    print "#", "position angle range used for simulating galaxies:", pos_ang_dict
+    print "#", "ngals_arcmin2:", ngals_arcmin2
+    print
+    print "#", "number of the simulated images:", nsimimages
+    print "#", "random_seed:", random_seed
+    print "#", "sims_nameroot:", sims_nameroot
+    print "#", "path2outdir:", path2outdir
+    print
+
+
+    # ---
+    # save tables
+    # ---
+    # make sure dir exists
+    outdir_sims             = os.path.join(path2outdir, sims_nameroot + "_sims")
+    if os.path.isdir( outdir_sims ) == False: os.makedirs(outdir_sims)
+    # save for mef table
+    phdulist = pyfits.PrimaryHDU( header = pyfits.BinTableHDU(data = true_catalogs[0]).header ) # primary table
+    list4fits= [phdulist]                                                                       # put it in the list first
+    for ntable in  xrange(nsimimages):                                                          # append all the tables
+        list4fits.append( pyfits.BinTableHDU(data = true_catalogs[ntable]) )                    # append all the tables
+    thdulist = pyfits.HDUList(list4fits)                                                        # convert it into table hdulist
+    thdulist.writeto(outdir_sims + "/" + sims_nameroot + ".sims.cat.fits", clobber = True)      # save
+
+    # diagnostic
+    print
+    print "#", "sims cat:",
+    print outdir_sims + "/" + sims_nameroot + ".sims.cat.fits"
+    print
+
+    return true_catalogs
 
 ######
 #
