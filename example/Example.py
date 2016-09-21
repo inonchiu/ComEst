@@ -22,18 +22,15 @@ CWD             =       os.path.dirname( os.path.abspath(__name__) )
 sex_exec        =       find_executable("sex")
 
 # get the file name
-path2img        =       os.path.join( CWD, "DEEP2329+0012_i.fits" )
+path2img        =       os.path.join( CWD, "DEEPi.cutout.fits" )
+path2wgt        =       os.path.join( CWD, "DEEPi.cutout.wgt.fits" )
 path2outdir     =       os.path.join( CWD, "outdir_example" )
 sex_config      =       os.path.join( os.path.dirname( comest.__file__ ), "templates/sex.config" )
 sex_params      =       os.path.join( os.path.dirname( comest.__file__ ), "templates/sex.params" )
 full_root_name  =       "full"
 bnb_root_name   =       "bnb"
-full_sex_args   =       "-FILTER_NAME" + "    " +  os.path.join( os.path.dirname( comest.__file__ ), "templates/filters/gauss_3.0_5x5.conv" ) + "    " + \
-                        "-STARNNW_NAME" + "    " +  os.path.join( os.path.dirname( comest.__file__ ), "templates/filters/default.nnw" ) + "    " + \
-                        "-DETECT_MINAREA 5   -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.005 -CLEAN Y -CLEAN_PARAM 1.0 -BACKPHOTO_THICK 24.0 -WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE" + " " + path2img + "[1]"
-bnb_sex_args    =       "-FILTER_NAME" + "    " +  os.path.join( os.path.dirname( comest.__file__ ), "templates/filters/gauss_3.0_5x5.conv" ) + "    " + \
-                        "-STARNNW_NAME" + "    " +  os.path.join( os.path.dirname( comest.__file__ ), "templates/filters/default.nnw" ) + "    " + \
-                        "-DETECT_MINAREA 350 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.005 -CLEAN Y -CLEAN_PARAM 1.0 -BACKPHOTO_THICK 24.0 -WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE" + " " + path2img + "[1]"
+full_sex_args   =        "-DETECT_MINAREA 5   -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.005 -CLEAN Y -CLEAN_PARAM 1.0 -BACKPHOTO_THICK 24.0 -WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE" + " " + path2wgt
+bnb_sex_args    =        "-DETECT_MINAREA 350 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.005 -CLEAN Y -CLEAN_PARAM 1.0 -BACKPHOTO_THICK 24.0 -WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE" + " " + path2wgt
 #img_zp          =       31.674    # the zeropoint
 img_zp          =       31.7    # the zeropoint
 img_pixel_scale =       0.26    # image pixel arcsec/pixel
@@ -42,19 +39,18 @@ img_fwhm        =       0.9     # from Desai+12 i band image.
 MAG_LO          =       20.0    # simulated magnitude range
 MAG_HI          =       25.0    # simulated magnitude range
 
-nsimimages      =       10      # the number of simulated images per set
-ncpu            =       10      # the number of cpu cores used in simulation
-nset            =       10      # the number of the sets, each set should contain nsimimages simulated images
+nsimimages      =       3      # the number of simulated images per set
+ncpu            =       3      # the number of cpu cores used in simulation
+nset            =       2      # the number of the sets, each set should contain nsimimages simulated images
 
 # decide which mode to use for simulation
-use_modgal      =       True    # galaxies distribution modelled from SE catalog
-use_bulgal      =       True    # bul + disk galaxies simulation
-use_reagal      =       True    # galaxies draw from COSMOS
-use_pntsrc      =       True    # point source simulation
+use_modgal      =       False    # galaxies distribution modelled from SE catalog
+use_bulgal      =       True     # bul + disk galaxies simulation
+use_reagal      =       False    # galaxies draw from COSMOS
+use_pntsrc      =       False    # point source simulation
 
 # set the random seed
 np.random.seed(232)
-                     
 
 # Declare
 HIST_DICT       =       {}
@@ -114,7 +110,7 @@ fits_image_example.SaveBnBFits()
 # use_modgal 
 #
 #####
-
+eee
 if    use_modgal:
     # ---
     # Anaylsis SE catalog

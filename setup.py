@@ -3,7 +3,9 @@ from distutils.core import setup
 setup(
     name='comest',
     version='1.0',
-    packages=['comest',
+    packages=[
+              'example',
+              'comest',
               'comest.templates',
               'comest.templates.filters'],
       package_data={
