@@ -864,14 +864,14 @@ class fitsimage:
                                     "-FILTER_NAME "  + os.path.join(PATH2CODE, "templates/filters/default.conv")
         if    "-STARNNW_NAME" not in full_sex_args:
             full_sex_args       =   full_sex_args + "    " + \
-                                    "-STARNNW_NAME " + os.path.join( os.path.dirname( comest.__file__ ), "templates/filters/default.nnw")
+                                    "-STARNNW_NAME " + os.path.join(PATH2CODE, "templates/filters/default.nnw")
         # sanitize bnb_sex_args
         if    "-FILTER_NAME" not in bnb_sex_args:
             bnb_sex_args        =   bnb_sex_args + "    " + \
                                     "-FILTER_NAME "  + os.path.join(PATH2CODE, "templates/filters/default.conv")
         if    "-STARNNW_NAME" not in bnb_sex_args:
             bnb_sex_args        =   bnb_sex_args + "    " + \
-                                    "-STARNNW_NAME " + os.path.join( os.path.dirname( comest.__file__ ), "templates/filters/default.nnw")
+                                    "-STARNNW_NAME " + os.path.join(PATH2CODE, "templates/filters/default.nnw")
         if    "-DETECT_MINAREA" not in bnb_sex_args:
             bnb_sex_args        =   bnb_sex_args + "    " + \
                                     "-DETECT_MINAREA 10"
