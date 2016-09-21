@@ -11,13 +11,14 @@ from math import *
 import scipy.interpolate as interpolate
 import scipy.optimize as optimize
 import pyfits
-import SrcPlacer
-import py2dmatch
 import numpy.lib.recfunctions as rfn # magic, used to merge structured array.
 from distutils.spawn import find_executable
 import os
 import time
 import sys
+import SrcPlacer
+import py2dmatch
+import utils
 
 PATH2CODE        =       os.path.dirname( os.path.abspath(__file__) ) # get the current directory
 
@@ -91,14 +92,12 @@ def SE_CMD_CREATOR(se_exec_is, img_is, se_config_is, se_params_is, outdir_is, na
 
 def CreateSrcFreeMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, path2out_map):
     """
-    This function reads in the check image of SE outputs running on the SAME input image and eventually 
-    creates the full source-free fits image.
-    
+    This function reads in the check image of SE outputs running on the SAME input image and eventually creates the full source-free fits image.
+
     It will copy the identical map and filter the pixels for the given segmentation map.
     If the pixel is not belonging to a source, then nothing happenes.
-    If the pixel is belonging to a source, then this function will generate the background value for that pixel
-    given the same position at the background and background_rms check images outputted by SE.
-    
+    If the pixel is belonging to a source, then this function will generate the background value for that pixel given the same position at the background and background_rms check images outputted by SE.
+
     Parameters:
         -`idnt_map` :   string. the path to the identical fits image.
         -`segm_map` :   string. the path to the segmentation fits image.
@@ -106,7 +105,7 @@ def CreateSrcFreeMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, path2
         -`bckg_rms_map` :   string. the path to the background_rms fits image.
         -`objc_map` :   string. the path to the objects fits image.
         -`path2out_map` :   string. the path to the identical fits image.
-        
+
     Returns:
         This functions will save the source-free fits image in the file named path2out_map.
     """
@@ -132,14 +131,14 @@ def CreateSrcFreeMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, path2
 
     # create the map.
     out_map             =   np.copy( readin_imgs["idnt_map"] )
-    
+
     # simulate the background
     try:
         simulated_bckg      =   np.random.normal(
                                 loc   = readin_imgs["bckg_map"    ],
                                 scale = readin_imgs["bckg_rms_map"] )
     except ValueError:
-        print RuntimeWarning("background rms map from Sextractor has value < 0, probably due to data corruption. We use median value instead.")
+        print RuntimeWarning("background rms map from Sextractor could have value < 0, probably due to data corruption. We use median value instead.")
         bckg_rms_map_sanitized        = np.copy( readin_imgs["bckg_rms_map"] )
         keep_me_in_rms_map            = np.isfinite( readin_imgs["bckg_rms_map"] ) & ( readin_imgs["bckg_rms_map"] > 0.0 )
         bckg_rms_map_sanitized[ ~keep_me_in_rms_map ]   = np.median( bckg_rms_map_sanitized[ keep_me_in_rms_map ] )
@@ -152,26 +151,24 @@ def CreateSrcFreeMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, path2
 
     # fill the object pixels with the simulated background in out_map
     out_map[i_am_objs_pixels]     =     simulated_bckg[i_am_objs_pixels]
-                                             
+
     # write the outfits
     out_hdu             =   pyfits.PrimaryHDU(
                             data = out_map, header = readin_headers["idnt_map"] )
     out_hdu.writeto(path2out_map, clobber = True, output_verify = "ignore")
-                                             
+
     return 0
 
 def CreateBnBMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, srcfree, path2out_map):
     """
-    This function reads in the check image of SE outputs running on the SAME input image and eventually 
-    creates the full fits image with only BnB (Big and Bright) objects.
-    
+    This function reads in the check image of SE outputs running on the SAME input image and eventually creates the full fits image with only BnB (Big and Bright) objects.
+
     It will copy the identical map and filter the pixels for the given segmentation map.
     If the pixel is belonging to a source, then nothing happenes.
-    If the pixel is not belonging to a source, then this function will generate the background value for that pixel
-    given the same position at the background and background_rms check images outputted by SE.
-    
+    If the pixel is not belonging to a source, then this function will generate the background value for that pixel given the same position at the background and background_rms check images outputted by SE.
+
     Caveat: it has to use the source-free image created previously by CreateSrcFreeMap.
-    
+
     Parameters:
         -`idnt_map` :   string. the path to the identical fits image.
         -`segm_map` :   string. the path to the segmentation fits image.
@@ -181,7 +178,7 @@ def CreateBnBMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, srcfree, 
         -`srcfree`  :   string. the path to the source free image created previously.
                         It has to be exactly the same size and dimensions as the idnt_map.
         -`path2out_map` :   string. the path to the identical fits image.
-        
+
     Returns:
         This functions will save the source-free fits image in the file named path2out_map.
     """
@@ -209,23 +206,24 @@ def CreateBnBMap(idnt_map, segm_map, bckg_map, bckg_rms_map, objc_map, srcfree, 
 
     # create the map.
     out_map             =   np.copy( readin_imgs["idnt_map"] )
-        
+
     # fill the object pixels with the simulated background in out_map
     out_map[i_am_bckg_pixels]     =     np.copy( readin_imgs["srcfree"] )[i_am_bckg_pixels]
-                                             
+
     # write the outfits
     out_hdu             =   pyfits.PrimaryHDU(
                             data = out_map, header = readin_headers["idnt_map"] )
     out_hdu.writeto(path2out_map, clobber = True, output_verify = "ignore")
-                                             
+
     return 0
 
+'''
 def Nearest_interpolator(values_array, x_edges, y_edges, new_x_edges, new_y_edges):
     """
     This subroutine interpolate the values of given arrays by 'Nearest_Neighbor' algorithm.
-    
+
     This function uses scipy.interpolate.NearestNDInterpolator
-    
+
     Parameters:
         -`values_array`: 2d np array. The map of the values in the cooridinate of [ny, nx], 
                          where nx and ny are the dimensions of the x and y coordinate, respectively.
@@ -234,8 +232,8 @@ def Nearest_interpolator(values_array, x_edges, y_edges, new_x_edges, new_y_edge
         -`new_x_edges`: 1d array. The new edges of the binning of x-coordinate.
         -`new_y_edges`: 1d array. The new edges of the binning of y-coordinate.
     Return:
-        -`new_values_array`: 2d np array. The new map with the value interpolated by 'Nearest Neighbor' Algorithm at the 
-                             coordinates assigned in the binning with the edges of new_x[y]_edges. 
+        -`new_values_array`: 2d np array. The new map with the value interpolated by 'Nearest Neighbor' Algorithm at the
+                             coordinates assigned in the binning with the edges of new_x[y]_edges.
                              It has the shape of [my, mx], wehre my + 1 = len(new_x_edges) and mx + 1 = len(new_y_edges).
     """
     # derive x_bins and y_bins
@@ -249,12 +247,13 @@ def Nearest_interpolator(values_array, x_edges, y_edges, new_x_edges, new_y_edge
     # derive x_mesh and y_mesh
     new_x_mesh, new_y_mesh = np.meshgrid(new_x_bins, new_y_bins)
     # derive the interpolator
-    interp_seed    = interpolate.NearestNDInterpolator( 
-                     np.vstack( (x_mesh.flatten(), y_mesh.flatten()) ).T, 
+    interp_seed    = interpolate.NearestNDInterpolator(
+                     np.vstack( (x_mesh.flatten(), y_mesh.flatten()) ).T,
                      values_array.flatten() )
     # derive the new_values_array
     new_values_array    =   interp_seed(new_x_mesh.flatten(), new_y_mesh.flatten()).reshape(new_x_mesh.shape)
     return new_values_array
+'''
 
 # ---
 # The standalone function to analysis SE output catalog
@@ -816,34 +815,34 @@ class fitsimage:
                        full_root_name    =   "full",
                        bnb_root_name     =   "bnb",
                        full_sex_args     =   "-FILTER_NAME     "  + os.path.join(PATH2CODE, "templates/filters/default.conv"),
-                       bnb_sex_args      =   "-FILTER_NAME     "  + os.path.join(PATH2CODE, "templates/filters/default.conv") + "    " + "-DETECT_MINAREA 10 -DETECT_THRESH 5 -ANALYSIS_THRESH 5",   
+                       bnb_sex_args      =   "-FILTER_NAME     "  + os.path.join(PATH2CODE, "templates/filters/default.conv") + "    " + "-DETECT_MINAREA 10 -DETECT_THRESH 5 -ANALYSIS_THRESH 5",
                  ):
         """
-        
+
         :param path2img: The absolute path to the observed image. It is the the only input file required by **ComEst**. It is _neccessary_ to have the header with correct WCS (``CD?_?``, ``CRVAL?`` and ``CRPIX?``) in the image of ``path2img``.
-        
+
         :param path2outdir: The absolute path to the output directory. All the files created by **ComEst** are saved in this directory. **ComEst** will create ``path2outdir`` if ``path2outdir`` does not exist (therefore please make sure you have the permission to create such directory).
-        
+
         :param img_zp: The zeropoint of the observed image. **ComEst** estimates the analysis based on the the given zeropoint. Specifically, it is the zeropoint that will be passed to **SExtractor** for extracting the photometry. Please make sure you have zeropoint well-calibrated. Currently **ComEst** does not support reading ZP from the header.
-        
+
         :param img_pixel_scale: The pixel scale of the observed image. It is in the unit of arcsec/pixel. Currently **ComEst** does not support reading pixel scale from the header while loading in the image.
-        
+
         :param img_fwhm: The Full Width Half Maximum of the observed image. The sources simulated by **ComEst** are convolved with the Point Spread Function (PSF) with the FWHM of ``img_fwhm``.
-        
+
         :param sex_exec: The absolute path to the executable **SExtactor**. **ComEst** will look for **SExtractor** in ``$PATH``, by Design. You can of course directly assign the absolute path of **SExtractor** if you desire. Once ``sex_exec`` is desided for this instance, then it will be the absolute path to **SExtractor** afterward.
-        
+
         :param sex_config: The configuration of **SExtractor**. **ComEst** will load the configuration ``sex.config`` in the directory ``templates`` of the source code. You can of course directly assign the absolute path of **SExtractor** config in this stage.
-        
+
         :param sex_params: The output parameter file of **SExtractor**. **ComEst** will load the configuration ``sex.params`` in the directory ``templates`` of the source code. You can of course directly assign the absolute path of **SExtractor** parameter file in this stage. **IMPORTANT**: the parameters file MUST contain the output parameters listed in parameter file in the directory of ``templates``. The best recommendation is just to modify the parameter file in the directory of ``templates``.
-        
+
         :param full_root_name: The code name for the products of **SExtractor** on the first run, which is designed to detect all the observed sources. Default is "full".
-        
+
         :param bnb_root_name: The code name for the products of **SExtractor** on the run, which is designed to detect all the Big and Bright (BnB) sources. This is done by tuning the **SExtractor** configuration. Default is "bnb". This run is useful when one want to create a rough mask map of the image or to investigate how the masking effect from the BnB sources affects the analysis.
-        
+
         :param full_sex_args: The arguments of **SExtractor** for the "full" run. This argument is exactly the argument which will be passed to **SExtractor**. You _have_ to specifically assign the ``FILTER_NAME`` since **SExtractor** does not support automatically loading the filter. For example, you can assign ``full_sex_args = "-FILTER_NAME /path/to/the/filter/file -CATALOG_NAME /path/to/output/cat"`` to make **SExtractor** have the customized ``FILTER_NAME`` and ``CATALOG_NAME`` in the configuration file. If one wants to use weight image in **SExtractor** run, the configuration for weighting should be included in this argument. See ``sex_config`` for the default configuration of **SExtractor**. **ComEst** uses ``"-FILTER_NAME /path/to/source/code/templates/filters/default.conv"`` by default.
-        
+
         :param bnb_sex_args: The arguments of **SExtractor** for the "bnb" run. This argument is exactly the argument which will be passed to **SExtractor**. You _have_ to specifically assign the ``FILTER_NAME`` since **SExtractor** does not support automatically loading the filter. For example, you can assign ``full_sex_args = "-FILTER_NAME /path/to/the/filter/file -CATALOG_NAME /path/to/output/cat"`` to make **SExtractor** have the customized ``FILTER_NAME`` and ``CATALOG_NAME`` in the configuration file. If one wants to use weight image in **SExtractor** run, the configuration for weighting should be included in this argument. See ``sex_config`` for the default configuration of **SExtractor**. **ComEst** uses ``"-FILTER_NAME /path/to/source/code/templates/filters/default.conv -DETECT_MINAREA 10 -DETECT_THRESH 5 -ANALYSIS_THRESH 5"`` by default. This means **ComEst** will identify the sources with ``DETECT_THRESH>5`` and ``DETECT_MINAREA>10pixel`` as the BnB sources.
-        
+
         :type path2img: str
         :type path2outdir: str
         :type img_zp: float
@@ -856,9 +855,27 @@ class fitsimage:
         :type bnb_root_name: str
         :type full_sex_args: str
         :type bnb_sex_args: str
-        
+
         Initialize the observed image saved in the FITS format.
         """
+        # sanitize sex_args
+        if    "-FILTER_NAME" not in full_sex_args:
+            full_sex_args       =   full_sex_args + "    " + \
+                                    "-FILTER_NAME "  + os.path.join(PATH2CODE, "templates/filters/default.conv")
+        if    "-FILTER_NAME" not in bnb_sex_args:
+            bnb_sex_args        =   bnb_sex_args + "    " + \
+                                    "-FILTER_NAME "  + os.path.join(PATH2CODE, "templates/filters/default.conv")
+        if    "-DETECT_MINAREA" not in bnb_sex_args:
+            bnb_sex_args        =   bnb_sex_args + "    " + \
+                                    "-DETECT_MINAREA 10"
+        if    "-DETECT_THRESH" not in bnb_sex_args:
+            bnb_sex_args        =   bnb_sex_args + "    " + \
+                                    "-DETECT_THRESH 5"
+        if    "-ANALYSIS_THRESH" not in bnb_sex_args:
+            bnb_sex_args        =   bnb_sex_args + "    " + \
+                                    "-ANALYSIS_THRESH 5"
+
+        # self-lize
         self.path2img           =   path2img
         self.path2outdir        =   path2outdir
         self.sex_exec           =   sex_exec
@@ -871,7 +888,7 @@ class fitsimage:
         self.img_zp             =   float(img_zp)
         self.img_pixel_scale    =   float(img_pixel_scale)
         self.img_fwhm           =   float(img_fwhm)
-    
+
         # set up the number of pixels of image
         self.y_npixels, self.x_npixels  =   pyfits.getdata(path2img).shape
 
@@ -905,17 +922,17 @@ class fitsimage:
     # ---
     def RunSE(self, name_root_is, se_args_is):
         """
-        
+
         :param name_root_is: The code name for this **SExtractor** run. The names of all outputs (catalog/check-images) of **SExtractor** are marked by this code name consistently.
-        
+
         :param se_args_is: The arguments of **SExtractor**. This argument is exactly the argument which will be passed to **SExtractor**. For example, you can assign ``se_args_is = "-FILTER_NAME /path/to/the/filter/file -CATALOG_NAME /path/to/output/cat"`` to make **SExtractor** have the customized ``FILTER_NAME`` and ``CATALOG_NAME`` in the configuration file.
-        
+
         :type name_root_is: str
         :type se_args_is: str
-        
+
         :returns: ``stdout``. The standard output status of **SExtractor** run. ``stdout = 0`` for successful **SExtractor** run. The output files are saved in the directory ``path2outdir``.
         :rtype: int
-        
+
         This method will create the se command which will be run on the observed image. The output files have consistent code name of ``name_root_is``.
         """
         # construct the args
@@ -938,7 +955,8 @@ class fitsimage:
         print run_me
         print
         # make sure outdir_is exists
-        if os.path.isdir(self.path2outdir) == False: os.makedirs(self.path2outdir)
+        if os.path.isdir(self.path2outdir) == False:
+            os.makedirs(self.path2outdir)
         # run it!
         stdout      =       os.system(run_me)
         return stdout
@@ -948,12 +966,12 @@ class fitsimage:
     # ---
     def RunSEforAll(self):
         """
-        
+
         :returns: ``stdout``. The standard output status of **SExtractor** run. ``stdout = 0`` for successful **SExtractor** run.
         :rtype: int
-        
+
         This method will create the se command which will be run on the observed image. The output files have consistent code name of ``full_root_name``. This method is design to catalog all the sources observed on the ``path2img``. The configuration (``sex_config``) and parameter files (``sex_params``) are used, while the argument ``full_sex_args`` is passed to **SExtractor**. The output files are saved in the directory ``path2outdir``.
-        
+
         """
         # construct the args
         put_me_in_se_args =   " -MAG_ZEROPOINT" + "    " + "%.3f" % self.img_zp   + \
@@ -974,7 +992,8 @@ class fitsimage:
         print run_me
         print
         # make sure outdir_is exists
-        if os.path.isdir(self.path2outdir) == False: os.makedirs(self.path2outdir)
+        if os.path.isdir(self.path2outdir) == False:
+            os.makedirs(self.path2outdir)
         # run it!
         stdout      =       os.system(run_me)
         return stdout
@@ -984,12 +1003,12 @@ class fitsimage:
     # ---
     def RunSEforBnB(self):
         """
-            
+
         :returns: ``stdout``. The standard output status of **SExtractor** run. ``stdout = 0`` for successful **SExtractor** run.
         :rtype: int
-            
+
         This method will create the se command which will be run on the observed image. The output files have consistent code name of ``bnb_root_name``. This method is design to catalog all the BnB (Bright and Big) sources observed on the ``path2img``. The configuration (``sex_config``) and parameter files (``sex_params``) are used, while the argument ``bnb_sex_args`` is passed to **SExtractor**. The output files are saved in the directory ``path2outdir``
-        
+
         """
         # construct the args
         put_me_in_se_args =   " -MAG_ZEROPOINT" + "    " + "%.3f" % self.img_zp   + \
@@ -1010,7 +1029,8 @@ class fitsimage:
         print run_me
         print
         # make sure outdir_is exists
-        if os.path.isdir(self.path2outdir) == False: os.makedirs(self.path2outdir)
+        if os.path.isdir(self.path2outdir) == False:
+            os.makedirs(self.path2outdir)
         # run it!
         stdout      =       os.system(run_me)
         return stdout
@@ -1020,9 +1040,9 @@ class fitsimage:
     # ---
     def SaveSrcFreeFits(self):
         """
-            
+
         This function run CreateFullSrcFreeMap to create the source-free image (SFI). The output files are saved in the path2outdir with the name of ``full_root_name`` + ``.identical.srcfree.fits``.
-        
+
         """
         # run the command
         CreateSrcFreeMap(
@@ -1038,15 +1058,15 @@ class fitsimage:
         print "#", "Source-free image:",
         print os.path.join(self.path2outdir, self.full_root_name + ".identical.srcfree.fits")
         print
-    
+
     # ---
     # Create bnb images
     # ---
     def SaveBnBFits(self):
         """
-            
+
         This function run CreateBnBMap to create the BnB image. The output files are saved in the ``path2outdir`` with the name of ``bnb_root_name`` + ``.identical.bnb.fits``.
-        
+
         """
         # run the command
         CreateBnBMap(
@@ -1070,47 +1090,39 @@ class fitsimage:
     # ---
     def BulDiskLocator(self,
         path2image,
-        psf_dict   = None,
-        stamp_size_arcsec   =   20.0,
-        mag_dict   = {"lo":20.0, "hi":25.0 },
-        hlr_dict   = {"lo":0.35 , "hi":0.75  },
-        fbulge_dict= {"lo":0.5 , "hi":0.9  },
-        q_dict     = {"lo":0.4 , "hi":1.0  },
-        pos_ang_dict={"lo":0.0 , "hi":180.0},
-        ngals_arcmin2 = 15.0,
-        nsimimages    = 50,
+        psf_dict      = None,
         random_seed   = 234231,
         sims_nameroot = "buldisk",
-        ncpu          = 2,
+        args_pssr     = utils.argpasser(),
         ):
         """
-            
+
         :param path2image: The absolute path to the image which you want to put the simulated sources on. This is usually the source free image (SFI), or it can also be the BnB image if you want to simulate the sources on the image where the observed BnB sources are kept. One can uses BnB image to test how the BnB sources affect the detection.
-        
+
         :param psf_dict: The psf configuration. Currently it only supports Moffat PSF with beta parameter of 4.5. ``psf_dict`` must be a dictionary in the form of ``{"moffat":{ "beta": _value_, "fwhm": _value_ } }``, where _value_ of ``fwhm`` is in the unit of arcsec. By default, ``psf_dict = {"moffat":{ "beta": 4.5, "fwhm": img_fwhm } }``.
-        
+
         :param stamp_size_arcsec: The size of the stamp of each simulated source by **GalSim**. The stamp is with the size of ``stamp_size_arcsec`` x ``stamp_size_arcsec`` (``stamp_size_arcsec`` in arcsec) where the **GalSim** will simulate one single source on. By default, it is ``stamp_size_arcsec = 15.0``.
-        
+
         :param mag_dict: The magnitude range which **GalSim** will simulate sources. It must be in the form of ``{"lo": _value_, "hi": _value_}``, where _value_ is expressed in magnitude. By default, it is ``mag_dict = {"lo":20.0, "hi":25.0 }``.
-        
+
         :param hlr_dict: The half light radius configuration of the sources simulated by **GalSim**. It is in the unit of arcsec. It has to be in the form of ``{"lo": _value_, "high": _value_}``. By default, it is ``hlr_dict = {"lo":0.35 , "hi":0.75 }``.
-        
+
         :param fbulge_dict: The configuration of the fraction of the bulge component. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and 1 means the galaxy has zero fraction of light from the disk component. By default, it is ``fbulge_dict = {"lo":0.5 , "hi":0.9  }``.
-        
+
         :param q_dict: The minor-to-major axis ratio configuration of the sources simulated by **GalSim**. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and ``q = 1`` means spherical. By default, it is ``q_dict = {"lo":0.4 , "hi":1.0 }``.
-        
+
         :param pos_ang_dict: The position angle configuration of the sources simulated by **GalSim**. It is in the unit of degree. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,180.0] and it is counter-clockwise with +x is 0 degree. By default, it is ``pos_ang_dict={"lo":0.0 , "hi":180.0 }``.
-        
+
         :param ngals_arcmin2: The projected number of the sources simulated by **GalSim** per arcmin square. You dont want to set this number too high because it will cause the problem from blending in the source detection. However, you dont want to lose the statistic power if you set this number too low. By defualt, it is ``ngals_arcmin2 = 15.0``.
-        
+
         :param nsimimages: The number of the images you want to simulate. It will be saved in the multi-extension file with the code name ``sims_nameroot``. By default, it is ``nsimimages = 50``.
-        
+
         :param random_seed: The random seed of the random generator. It will be passed to **GalSim** for simulating the sources.
-        
+
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**. By default, it is ``sims_nameroot = "buldisk"``.
-        
+
         :param ncpu: The number of cpu for parallel running. By default, it is ``ncpu = 2``. Please do not set this number higher than the CPU cores you have.
-        
+
         :type path2image: str
         :type psf_dict: dict
         :type stamp_size_arcsec: float
@@ -1124,71 +1136,56 @@ class fitsimage:
         :type random_seed: int
         :type sims_nameroot: str
         :type ncpu: int
-        
+
         :returns: ``out_mef`` is the list containing the simulated images and ``out_true_cats`` is the list containing the information of the mock catalogs (hence ``len(out_mef) = len(out_true_cats) = nsimimages``).
         :rtype: list, list
-        
+
         This method calls the routine ``comest.SrcPlacer.BulDiskLocator`` to put the fake sources on this image. In this case it is the galaxies consisting of buldge and disk components. The simulated sources are uniformly distributed in the CCD ( so are in all the provided configuration) with the number density of ``ngals_arcmin2``.
-        
+
         .. seealso:: ``comest.SrcPlacer.BulDiskLocator`` for more details about the configuration.
-        
-            
+
+
         """
         # assign the value and sanitize
         zeropoint   =   self.img_zp     # zeropoint
         # assign psf
         if  psf_dict  is None:
             psf_dict    =   {"moffat":{ "beta": 4.5, "fwhm": self.img_fwhm } }
-            
+
         # diagnostic output
         print
         print "#", "Using BulDiskLocator to put galaxies (bulge + disk) on the targeted image..."
         print "#", "path2image:", path2image
         print "#", "psf_dict:", psf_dict
-        print "#", "stamp_size_arcsec:", stamp_size_arcsec
-        print "#", "mag_dict:", mag_dict
-        print "#", "hlr_dict:", hlr_dict
-        print "#", "fbulge_dict:", fbulge_dict
-        print "#", "q_dict:", q_dict
-        print "#", "pos_ang_dict:", pos_ang_dict
-        print "#", "ngals_arcmin2:", ngals_arcmin2
-        print "#", "nsimimages:", nsimimages
         print "#", "random_seed:", random_seed
         print "#", "sims_nameroot:", sims_nameroot
-        print "#", "ncpu:", ncpu
+        args_pssr.i_am()
         print
-        
+
         # timing
         t1      =       time.time()
-        
+
         # run it and save it as the file.
         out_mef, out_true_cats  = SrcPlacer.BulDiskLocator(
             path2image          = path2image,
             zeropoint           = zeropoint,
             psf_dict            = psf_dict,
-            stamp_size_arcsec   = stamp_size_arcsec,
-            mag_dict            = mag_dict,
-            hlr_dict            = hlr_dict,
-            fbulge_dict         = fbulge_dict,
-            q_dict              = q_dict,
-            pos_ang_dict        = pos_ang_dict,
-            ngals_arcmin2       = ngals_arcmin2,
-            nsimimages          = nsimimages,
             random_seed         = random_seed,
-            ncpu                = ncpu,
+            args_pssr           = args_pssr,
             )
-        
+
         # timing
         t2      =       time.time()
-        
+
         # diagnostic
         print
         print "#", "Total time takes:", t2 - t1
         print
-        
+
         # make sure dir exists
         outdir_sims             = os.path.join(self.path2outdir, sims_nameroot + "_sims")
-        if os.path.isdir( outdir_sims ) == False: os.makedirs(outdir_sims)
+        if os.path.isdir( outdir_sims ) == False:
+            os.makedirs(outdir_sims)
         # save
         # for mef image
         SrcPlacer.galsim.fits.writeMulti(out_mef, outdir_sims + "/" + sims_nameroot + ".sims.fits")
@@ -1199,7 +1196,7 @@ class fitsimage:
             list4fits.append( pyfits.BinTableHDU(data = out_true_cats[ntable]) )                    # append all the tables
         thdulist = pyfits.HDUList(list4fits)                                                        # convert it into table hdulist
         thdulist.writeto(outdir_sims + "/" + sims_nameroot + ".sims.cat.fits", clobber = True)      # save
-        
+
         # diagnostic
         print
         print "#", "sims image:",
@@ -1207,7 +1204,7 @@ class fitsimage:
         print "#", "sims cat:",
         print outdir_sims + "/" + sims_nameroot + ".sims.cat.fits"
         print
-        
+
         return out_mef, out_true_cats
 
 
