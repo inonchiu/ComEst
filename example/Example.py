@@ -14,7 +14,7 @@ import pickle
 # Set the file names and configurations
 #
 #####
-eee
+
 # get the current working directory
 CWD             =       os.path.dirname( os.path.abspath(__name__) )
 
@@ -110,7 +110,7 @@ fits_image_example.SaveBnBFits()
 # use_modgal 
 #
 #####
-eee
+
 if    use_modgal:
     # ---
     # Anaylsis SE catalog
@@ -160,20 +160,32 @@ if    use_modgal:
 #####
 
 if    use_bulgal:
- 
+
+    # ---
+    # args
+    # ---
+    args_pssr   =   comest.utils.argpasser(
+                    stamp_size_arcsec  = 20.0,
+                    mag_dict           = {"lo":MAG_LO, "hi":MAG_HI },
+                    hlr_dict           = {"lo":0.35, "hi":0.75 },
+                    fbulge_dict        = {"lo":0.5 , "hi":0.9  },
+                    q_dict             = {"lo":0.4 , "hi":1.0  },
+                    pos_ang_dict       = {"lo":0.0 , "hi":180.0},
+                    ngals_arcmin2      = 15.0,
+                    nsimimages         = nsimimages,
+                    ncpu               = ncpu,
+            )
+
     # ---
     # put srcs on the images
     # ---
     for nsnset in xrange(nset):
         mef_buldisk, cat_buldisk = fits_image_example.BulDiskLocator(
                                path2image = fits_image_example.path2outdir + "/" + bnb_root_name + ".identical.bnb.fits",
-                               nsimimages = nsimimages,
-                               ngals_arcmin2 = 15.0,
                                psf_dict   = {"moffat":{ "beta": 3.5, "fwhm": img_fwhm} },
-                               ncpu       = ncpu,
-                               mag_dict   = {"lo":MAG_LO, "hi":MAG_HI },
                                random_seed= int( np.random.random() * 1000* 2.0**(nsnset + np.random.random()) ),
-                               sims_nameroot = "buldisk_"+"%i" % nsnset)
+                               sims_nameroot = "buldisk_"+"%i" % nsnset,
+                               args_pssr = args_pssr)
 
     # ---
     # Run SE
@@ -181,7 +193,7 @@ if    use_bulgal:
     for nsnset in xrange(nset):
         fits_image_example.RunSEforSims( sims_nameroot = "buldisk_"+"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits", ztol = 1.5)
 
-
+eee
 #####
 #
 # use_reagal 
