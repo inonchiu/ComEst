@@ -24,3 +24,5 @@ CVS/Repository
 comest/templates/filters/CVS/Entries
 
 *.swp
+
+example/outdir_example/*
