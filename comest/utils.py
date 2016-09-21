@@ -8,7 +8,7 @@
 ##############################################
 
 
-def argpasser(object):
+class argpasser(object):
     """
     ComEst use the arguments that are almost repeatedly. Therefore, it will be useful to create a customized arguemnt passer like this.
 
