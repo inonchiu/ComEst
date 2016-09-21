@@ -948,6 +948,17 @@ def BulDiskLocator(
     .. seealso:: ``comest.ComEst.BulDiskLocator`` for more details about the configuration.
 
     """
+    # ---
+    # extractor args_pssr
+    # ---
+    stamp_size_arcsec   =   args_pssr.stamp_size_arcsec
+    mag_dict            =   args_pssr.mag_dict
+    hlr_dict            =   args_pssr.hlr_dict
+    fbulge_dict         =   args_pssr.fbulge_dict
+    q_dict              =   args_pssr.q_dict
+    pos_ang_dict        =   args_pssr.pos_ang_dict
+    ngals_arcmin2       =   args_pssr.ngals_arcmin2
+    ncpu                =   args_pssr.ncpu
 
     # set up the cpu number
     if  ncpu > multiprocessing.cpu_count():
@@ -966,18 +977,6 @@ def BulDiskLocator(
     task_queue          =   multiprocessing.Queue()
     # set up the done task
     done_queue          =   multiprocessing.Queue()
-
-    # ---
-    # extractor args_pssr
-    # ---
-    stamp_size_arcsec   =   args_pssr.stamp_size_arcsec
-    mag_dict            =   args_pssr.mag_dict
-    hlr_dict            =   args_pssr.hlr_dict
-    fbulge_dict         =   args_pssr.fbulge_dict
-    q_dict              =   args_pssr.q_dict
-    pos_ang_dict        =   args_pssr.pos_ang_dict
-    ngals_arcmin2       =   args_pssr.ngals_arcmin2
-
 
     # looping over images
     for nimage in xrange(nsimimages):
