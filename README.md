@@ -38,6 +38,11 @@ If you use **ComEst** in your work please contact the authors.
 
     **ComEst** is tested against numpy > v1.9.1, SciPy > v0.14.0, PyFITS > v3.3, GalSim > v1.3 and SExtractor > v2.19, although **ComEst** should work with the older versions of prerequisites. Since **ComEst** heavily relies on **GalSim**, we strongly recommend that users should install **GalSim** with version higher than v1.3.
 
+Or you can simply type:
+   ```
+   pip install git+git://github.com/inonchiu/ComEst.git
+   ```
+
  4. The installation is done. Now you can load in **ComEst** package by typing the following in python environment 
     
     ```
