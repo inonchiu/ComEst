@@ -39,7 +39,7 @@ img_fwhm        =       0.9     # from Desai+12 i band image.
 MAG_LO          =       20.0    # simulated magnitude range
 MAG_HI          =       25.0    # simulated magnitude range
 
-nsimimages      =       20     # the number of simulated images per set
+nsimimages      =       5      # the number of simulated images per set
 ncpu            =       3      # the number of cpu cores used in simulation
 nset            =       2      # the number of the sets, each set should contain nsimimages simulated images
 
@@ -105,6 +105,24 @@ fits_image_example.RunSEforBnB()
 fits_image_example.SaveBnBFits()
 
 
+
+# ---
+# args
+# ---
+# This is the argument that will be passed into all the simulator.
+
+args_pssr   =   comest.utils.argpasser(
+                stamp_size_arcsec  = 20.0,
+                mag_dict           = {"lo":MAG_LO, "hi":MAG_HI },
+                hlr_dict           = {"lo":0.35, "hi":0.75 },
+                fbulge_dict        = {"lo":0.5 , "hi":0.9  },
+                q_dict             = {"lo":0.4 , "hi":1.0  },
+                pos_ang_dict       = {"lo":0.0 , "hi":180.0},
+                ngals_arcmin2      = 15.0,
+                nsimimages         = nsimimages,
+                ncpu               = ncpu,
+        )
+
 #####
 #
 # use_modgal 
@@ -161,20 +179,6 @@ if    use_modgal:
 
 if    use_bulgal:
 
-    # ---
-    # args
-    # ---
-    args_pssr   =   comest.utils.argpasser(
-                    stamp_size_arcsec  = 20.0,
-                    mag_dict           = {"lo":MAG_LO, "hi":MAG_HI },
-                    hlr_dict           = {"lo":0.35, "hi":0.75 },
-                    fbulge_dict        = {"lo":0.5 , "hi":0.9  },
-                    q_dict             = {"lo":0.4 , "hi":1.0  },
-                    pos_ang_dict       = {"lo":0.0 , "hi":180.0},
-                    ngals_arcmin2      = 15.0,
-                    nsimimages         = nsimimages,
-                    ncpu               = ncpu,
-            )
 
     # ---
     # put srcs on the images
@@ -190,10 +194,9 @@ if    use_bulgal:
     # ---
     # Run SE
     # ---
-    #for nsnset in xrange(nset):
-    fits_image_example.RunSEforSims( sims_nameroot = "buldisk_"+"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits", ztol = 1.5, ncpu = 3)
+    for nsnset in xrange(nset):
+        fits_image_example.RunSEforSims( sims_nameroot = "buldisk_"+"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits", ztol = 1.5, ncpu = 3)
 
-eee
 #####
 #
 # use_reagal 
@@ -209,18 +212,15 @@ if    use_reagal:
     for nsnset in xrange(nset):
         mef_realgal, cat_realgal = fits_image_example.RealGalLocator(
                                path2image = fits_image_example.path2outdir + "/" + bnb_root_name + ".identical.bnb.fits",
-                               nsimimages = nsimimages,
-                               ngals_arcmin2 = 15.0,
                                psf_dict   = {"moffat":{ "beta": 3.5, "fwhm": img_fwhm} },
-                               ncpu       = ncpu,
-                               mag_dict   = {"lo":MAG_LO, "hi":MAG_HI },
                                random_seed= int( np.random.random() * 1000* 2.0**(nsnset + np.random.random()) ),
-                               sims_nameroot = "realgal_"+"%i" % nsnset)
+                               sims_nameroot = "realgal_"+"%i" % nsnset,
+                               args_pssr = args_pssr)
     # ---
     # Run SE
     # ---
     for nsnset in xrange(nset):
-        fits_image_example.RunSEforSims( sims_nameroot = "realgal_"+"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits", ztol = 1.5)
+        fits_image_example.RunSEforSims( sims_nameroot = "realgal_"+"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits", ztol = 1.5, ncpu = 3)
 
 
 #####
@@ -238,19 +238,19 @@ if    use_pntsrc:
     for nsnset in xrange(nset):
         mef_pntsrcs, cat_pntsrcs = fits_image_example.PntSrcLocator(
                                path2image = fits_image_example.path2outdir + "/" + bnb_root_name + ".identical.bnb.fits",
-                               nsimimages = nsimimages,
-                               ngals_arcmin2 = 15.0,
                                psf_dict   = {"moffat":{ "beta": 3.5, "fwhm": img_fwhm} },
-                               ncpu       = ncpu,
-                               mag_dict   = {"lo":MAG_LO, "hi":MAG_HI },
                                random_seed= int( np.random.random() * 1000* 2.0**(nsnset + np.random.random()) ),
-                               sims_nameroot = "pntsrc_"+"%i" % nsnset)
+                               sims_nameroot = "pntsrc_"+"%i" % nsnset,
+                               args_pssr = args_pssr)
     # ---
     # Run SE
     # ---
     for nsnset in xrange(nset):
-        fits_image_example.RunSEforSims( sims_nameroot = "pntsrc_" +"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits", ztol = 1.5)
+        fits_image_example.RunSEforSims( sims_nameroot = "pntsrc_" +"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits", ztol = 1.5, ncpu = 3)
 
+
+
+ee
 #####
 #
 # Histgram

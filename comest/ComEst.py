@@ -1133,41 +1133,14 @@ class fitsimage:
 
         :param psf_dict: The psf configuration. Currently it only supports Moffat PSF with beta parameter of 4.5. ``psf_dict`` must be a dictionary in the form of ``{"moffat":{ "beta": _value_, "fwhm": _value_ } }``, where _value_ of ``fwhm`` is in the unit of arcsec. By default, ``psf_dict = {"moffat":{ "beta": 4.5, "fwhm": img_fwhm } }``.
 
-        :param stamp_size_arcsec: The size of the stamp of each simulated source by **GalSim**. The stamp is with the size of ``stamp_size_arcsec`` x ``stamp_size_arcsec`` (``stamp_size_arcsec`` in arcsec) where the **GalSim** will simulate one single source on. By default, it is ``stamp_size_arcsec = 15.0``.
-
-        :param mag_dict: The magnitude range which **GalSim** will simulate sources. It must be in the form of ``{"lo": _value_, "hi": _value_}``, where _value_ is expressed in magnitude. By default, it is ``mag_dict = {"lo":20.0, "hi":25.0 }``.
-
-        :param hlr_dict: The half light radius configuration of the sources simulated by **GalSim**. It is in the unit of arcsec. It has to be in the form of ``{"lo": _value_, "high": _value_}``. By default, it is ``hlr_dict = {"lo":0.35 , "hi":0.75 }``.
-
-        :param fbulge_dict: The configuration of the fraction of the bulge component. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and 1 means the galaxy has zero fraction of light from the disk component. By default, it is ``fbulge_dict = {"lo":0.5 , "hi":0.9  }``.
-
-        :param q_dict: The minor-to-major axis ratio configuration of the sources simulated by **GalSim**. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and ``q = 1`` means spherical. By default, it is ``q_dict = {"lo":0.4 , "hi":1.0 }``.
-
-        :param pos_ang_dict: The position angle configuration of the sources simulated by **GalSim**. It is in the unit of degree. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,180.0] and it is counter-clockwise with +x is 0 degree. By default, it is ``pos_ang_dict={"lo":0.0 , "hi":180.0 }``.
-
-        :param ngals_arcmin2: The projected number of the sources simulated by **GalSim** per arcmin square. You dont want to set this number too high because it will cause the problem from blending in the source detection. However, you dont want to lose the statistic power if you set this number too low. By defualt, it is ``ngals_arcmin2 = 15.0``.
-
-        :param nsimimages: The number of the images you want to simulate. It will be saved in the multi-extension file with the code name ``sims_nameroot``. By default, it is ``nsimimages = 50``.
-
         :param random_seed: The random seed of the random generator. It will be passed to **GalSim** for simulating the sources.
 
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**. By default, it is ``sims_nameroot = "buldisk"``.
 
-        :param ncpu: The number of cpu for parallel running. By default, it is ``ncpu = 2``. Please do not set this number higher than the CPU cores you have.
-
         :type path2image: str
         :type psf_dict: dict
-        :type stamp_size_arcsec: float
-        :type mag_dict: dict
-        :type hlr_dict: dict
-        :type fbulge_dict: dict
-        :type q_dict: dict
-        :type pos_ang_dict: dict
-        :type ngals_arcmin2: float
-        :type nsimimages: int
         :type random_seed: int
         :type sims_nameroot: str
-        :type ncpu: int
 
         :returns: ``out_mef`` is the list containing the simulated images and ``out_true_cats`` is the list containing the information of the mock catalogs (hence ``len(out_mef) = len(out_true_cats) = nsimimages``).
         :rtype: list, list
@@ -1260,42 +1233,15 @@ class fitsimage:
 
         :param psf_dict: The psf configuration. Currently it only supports Moffat PSF with beta parameter of 4.5. ``psf_dict`` must be a dictionary in the form of ``{"moffat":{ "beta": _value_, "fwhm": _value_ } }``, where _value_ of ``fwhm`` is in the unit of arcsec. By default, ``psf_dict = {"moffat":{ "beta": 4.5, "fwhm": img_fwhm } }``.
         
-        :param stamp_size_arcsec: The size of the stamp of each simulated source by **GalSim**. The stamp is with the size of ``stamp_size_arcsec`` x ``stamp_size_arcsec`` (``stamp_size_arcsec`` in arcsec) where the **GalSim** will simulate one single source on. By default, it is ``stamp_size_arcsec = 15.0``.
-        
-        :param mag_dict: The magnitude range which **GalSim** will simulate sources. It must be in the form of ``{"lo": _value_, "hi": _value_}``, where _value_ is expressed in magnitude. By default, it is ``mag_dict = {"lo":20.0, "hi":25.0 }``.
-        
-        :param hlr_dict: The half light radius configuration of the sources simulated by **GalSim**. It is in the unit of arcsec. It has to be in the form of ``{"lo": _value_, "high": _value_}``. By default, it is ``hlr_dict = {"lo":0.35 , "hi":0.75 }``.
-        
-        :param fbulge_dict: The configuration of the fraction of the bulge component. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and 1 means the galaxy has zero fraction of light from the disk component. By default, it is ``fbulge_dict = {"lo":0.5 , "hi":0.9  }``.
-        
-        :param q_dict: The minor-to-major axis ratio configuration of the sources simulated by **GalSim**. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and ``q = 1`` means spherical. By default, it is ``q_dict = {"lo":0.4 , "hi":1.0 }``.
-        
-        :param pos_ang_dict: The position angle configuration of the sources simulated by **GalSim**. It is in the unit of degree. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,180.0] and it is counter-clockwise with +x is 0 degree. By default, it is ``pos_ang_dict={"lo":0.0 , "hi":180.0 }``.
-        
-        :param ngals_arcmin2: The projected number of the sources simulated by **GalSim** per arcmin square. You dont want to set this number too high because it will cause the problem from blending in the source detection. However, you dont want to lose the statistic power if you set this number too low. By defualt, it is ``ngals_arcmin2 = 15.0``.
-        
-        :param nsimimages: The number of the images you want to simulate. It will be saved in the multi-extension file with the code name ``sims_nameroot``. By default, it is ``nsimimages = 50``.
-        
         :param random_seed: The random seed of the random generator. It will be passed to **GalSim** for simulating the sources.
         
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**. By default, it is ``sims_nameroot = "buldisk"``.
         
-        :param ncpu: The number of cpu for parallel running. By default, it is ``ncpu = 2``. Please do not set this number higher than the CPU cores you have.
-        
         :type path2image: str
         :type path2readincat: str
         :type psf_dict: dict
-        :type stamp_size_arcsec: float
-        :type mag_dict: dict
-        :type hlr_dict: dict
-        :type fbulge_dict: dict
-        :type q_dict: dict
-        :type pos_ang_dict: dict
-        :type ngals_arcmin2: float
-        :type nsimimages: int
         :type random_seed: int
         :type sims_nameroot: str
-        :type ncpu: int
         
         :returns: ``out_mef`` is the list containing the simulated images and ``out_true_cats`` is the list containing the information of the mock catalogs (hence ``len(out_mef) = len(out_true_cats) = nsimimages``).
         :rtype: list, list
@@ -1397,41 +1343,14 @@ class fitsimage:
         
         :param psf_dict: The psf configuration. Currently it only supports Moffat PSF with beta parameter of 4.5. ``psf_dict`` must be a dictionary in the form of ``{"moffat":{ "beta": _value_, "fwhm": _value_ } }``, where _value_ of ``fwhm`` is in the unit of arcsec. By default, ``psf_dict = {"moffat":{ "beta": 4.5, "fwhm": img_fwhm } }``.
         
-        :param stamp_size_arcsec: The size of the stamp of each simulated source by **GalSim**. The stamp is with the size of ``stamp_size_arcsec`` x ``stamp_size_arcsec`` (``stamp_size_arcsec`` in arcsec) where the **GalSim** will simulate one single source on. By default, it is ``stamp_size_arcsec = 20.0``.
-        
-        :param mag_dict: The magnitude range which **GalSim** will simulate sources. It must be in the form of ``{"lo": _value_, "hi": _value_}``, where _value_ is expressed in magnitude. By default, it is ``mag_dict = {"lo":20.0, "hi":25.0 }``.
-        
-        :param hlr_dict: The half light radius configuration of the sources simulated by **GalSim**. It is in the unit of arcsec. It has to be in the form of ``{"lo": _value_, "high": _value_}``. By default, it is ``hlr_dict = {"lo":0.35 , "hi":0.75 }``.
-        
-        :param fbulge_dict: The configuration of the fraction of the bulge component. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and 1 means the galaxy has zero fraction of light from the disk component. By default, it is ``fbulge_dict = {"lo":0.5 , "hi":0.9  }``.
-        
-        :param q_dict: The minor-to-major axis ratio configuration of the sources simulated by **GalSim**. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and ``q = 1`` means spherical. By default, it is ``q_dict = {"lo":0.4 , "hi":1.0 }``.
-        
-        :param pos_ang_dict: The position angle configuration of the sources simulated by **GalSim**. It is in the unit of degree. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,180.0] and it is counter-clockwise with +x is 0 degree. By default, it is ``pos_ang_dict={"lo":0.0 , "hi":180.0 }``.
-        
-        :param ngals_arcmin2: The projected number of the sources simulated by **GalSim** per arcmin square. You dont want to set this number too high because it will cause the problem from blending in the source detection. However, you dont want to lose the statistic power if you set this number too low. By defualt, it is ``ngals_arcmin2 = 15.0``.
-        
-        :param nsimimages: The number of the images you want to simulate. It will be saved in the multi-extension file with the code name ``sims_nameroot``. By default, it is ``nsimimages = 50``.
-        
         :param random_seed: The random seed of the random generator. It will be passed to **GalSim** for simulating the sources.
         
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**. By default, it is ``sims_nameroot = "buldisk"``.
         
-        :param ncpu: The number of cpu for parallel running. By default, it is ``ncpu = 2``. Please do not set this number higher than the CPU cores you have.
-        
         :type path2image: str
         :type psf_dict: dict
-        :type stamp_size_arcsec: float
-        :type mag_dict: dict
-        :type hlr_dict: dict
-        :type fbulge_dict: dict
-        :type q_dict: dict
-        :type pos_ang_dict: dict
-        :type ngals_arcmin2: float
-        :type nsimimages: int
         :type random_seed: int
         :type sims_nameroot: str
-        :type ncpu: int
         
         :returns: ``out_mef`` is the list containing the simulated images and ``out_true_cats`` is the list containing the information of the mock catalogs (hence ``len(out_mef) = len(out_true_cats) = nsimimages``).
         :rtype: list, list
@@ -1520,40 +1439,15 @@ class fitsimage:
         
         :param psf_dict: The psf configuration. Currently it only supports Moffat PSF with beta parameter of 4.5. ``psf_dict`` must be a dictionary in the form of ``{"moffat":{ "beta": _value_, "fwhm": _value_ } }``, where _value_ of ``fwhm`` is in the unit of arcsec. By default, ``psf_dict = {"moffat":{ "beta": 4.5, "fwhm": img_fwhm } }``.
         
-        :param stamp_size_arcsec: The size of the stamp of each simulated source by **GalSim**. The stamp is with the size of ``stamp_size_arcsec`` x ``stamp_size_arcsec`` (``stamp_size_arcsec`` in arcsec) where the **GalSim** will simulate one single source on. By default, it is ``stamp_size_arcsec = 20.0``.
-        
-        :param mag_dict: The magnitude range which **GalSim** will simulate sources. It must be in the form of ``{"lo": _value_, "hi": _value_}``, where _value_ is expressed in magnitude. By default, it is ``mag_dict = {"lo":20.0, "hi":25.0 }``.
-        :param hlr_dict: The half light radius configuration of the sources simulated by **GalSim**. It is in the unit of arcsec. It has to be in the form of ``{"lo": _value_, "high": _value_}``. By default, it is ``hlr_dict = {"lo":0.35 , "hi":0.75 }``.
-        
-        :param fbulge_dict: The configuration of the fraction of the bulge component. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and 1 means the galaxy has zero fraction of light from the disk component. By default, it is ``fbulge_dict = {"lo":0.5 , "hi":0.9  }``.
-        
-        :param q_dict: The minor-to-major axis ratio configuration of the sources simulated by **GalSim**. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,1] and ``q = 1`` means spherical. By default, it is ``q_dict = {"lo":0.4 , "hi":1.0 }``.
-        
-        :param pos_ang_dict: The position angle configuration of the sources simulated by **GalSim**. It is in the unit of degree. It must be in the form of ``{"lo": _value_, "high": _value_}``. Note that the _value_ has to be within [0,180.0] and it is counter-clockwise with +x is 0 degree. By default, it is ``pos_ang_dict={"lo":0.0 , "hi":180.0 }``.
-        
-        :param ngals_arcmin2: The projected number of the sources simulated by **GalSim** per arcmin square. You dont want to set this number too high because it will cause the problem from blending in the source detection. However, you dont want to lose the statistic power if you set this number too low. By defualt, it is ``ngals_arcmin2 = 15.0``.
-        
-        :param nsimimages: The number of the images you want to simulate. It will be saved in the multi-extension file with the code name ``sims_nameroot``. By default, it is ``nsimimages = 50``.
-        
         :param random_seed: The random seed of the random generator. It will be passed to **GalSim** for simulating the sources.
         
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**. By default, it is ``sims_nameroot = "buldisk"``.
         
-        :param ncpu: The number of cpu for parallel running. By default, it is ``ncpu = 2``. Please do not set this number higher than the CPU cores you have.
         
         :type path2image: str
         :type psf_dict: dict
-        :type stamp_size_arcsec: float
-        :type mag_dict: dict
-        :type hlr_dict: dict
-        :type fbulge_dict: dict
-        :type q_dict: dict
-        :type pos_ang_dict: dict
-        :type ngals_arcmin2: float
-        :type nsimimages: int
         :type random_seed: int
         :type sims_nameroot: str
-        :type ncpu: int
         
         :returns: ``out_mef`` is the list containing the simulated images and ``out_true_cats`` is the list containing the information of the mock catalogs (hence ``len(out_mef) = len(out_true_cats) = nsimimages``).
         :rtype: list, list
@@ -1645,12 +1539,15 @@ class fitsimage:
         :param tol_fwhm: The multiplicative factor of ``img_fwhm`` used in matching the **SExtractor** to the mock catalog. By default, it is ``tol_fwhm = 1`` meaning we match all the **SExtractor** objects to the mock catalog within 1 ``img_fwhm``.
         :param ztol: the tolerance of magnitude in matching. The objects are considered to ba a pair of match if the distance separation < tol_fwhm * fwhm and abs(mag_auto - mag_true) < ztol. Default is 1.0.
         
+        :param ncpu: the number of cpu cores used to run SE.
+        
         :type sims_nameroot: str
         :type sims_sex_args: str
         :type path2maskmap: str
         :type outputcheckimage: bool
         :type tol_fwhm: float
         :type ztol: float
+        :type ncpu: int
         
         :returns: ``stdout``. The standard output status of the run. ``stdout = 0`` for successful run.
         :rtype: int

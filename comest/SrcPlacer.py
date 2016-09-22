@@ -152,7 +152,6 @@ def _PntSrcLocator_single(
         -`true_cats`: structured data array. It is the true catalog simulated by Galsim.
 
     """
-
     # ---
     # sanitize the parameters
     # ---
@@ -223,8 +222,6 @@ def _PntSrcLocator_single(
     stamp_size   =  np.int(stamp_size_arcsec  / pixel_scale)     \
     if  np.int(stamp_size_arcsec  / pixel_scale) % 2 == 0 else \
         np.int(stamp_size_arcsec  / pixel_scale) + 1
-        #np.int(10.0 / pixel_scale) + 1
-
 
     # copy the image
     image_copy      =   full_image.copy()
@@ -403,8 +400,6 @@ def _BulDiskLocator_single(
     stamp_size   =  np.int(stamp_size_arcsec  / pixel_scale)     \
     if  np.int(stamp_size_arcsec  / pixel_scale) % 2 == 0 else \
         np.int(stamp_size_arcsec  / pixel_scale) + 1
-        #np.int(10.0 / pixel_scale) + 1
-
 
     # copy the image
     image_copy      =   full_image.copy()
@@ -448,6 +443,7 @@ def _BulDiskLocator_single(
         gal_pos_ang =   pos_ang_lo + ud() * (pos_ang_hi - pos_ang_lo )
         # Gal profile
         # Galaxy is a bulge + disk with parameters taken from the catalog:
+        
         disk  = galsim.Exponential(flux               = (1.0 - gal_fbulge),
                                    half_light_radius  = gal_hlr             )
         #bulge = galsim.DeVaucouleurs(flux             = gal_fbulge,
@@ -455,8 +451,15 @@ def _BulDiskLocator_single(
         #                           flux_untruncated   = False )
         bulge  = galsim.Gaussian( flux               = gal_fbulge,
                                   half_light_radius  = gal_hlr )
+
         # sum disk and bulge
         gal = disk + bulge
+        '''
+        bulge = galsim.DeVaucouleurs(flux             = 1.0,
+                                     half_light_radius  = gal_hlr,
+                                     flux_untruncated   = False )
+        gal = bulge
+        '''
         # set the flue
         gal_flux    =   _Mag2Flux(mag = gal_mag, ZP = zeropoint)
         gal = gal.withFlux(gal_flux)
@@ -886,16 +889,8 @@ def BulDiskLocator(
     path2image,
     zeropoint  = 20.789,
     psf_dict   = {"moffat":{ "beta": 4.5, "fwhm": 1.6} },
-    #stamp_size_arcsec   =   20.0,
-    #mag_dict   = {"lo":19.0, "hi":23.0 },
-    #hlr_dict   = {"lo":0.35 , "hi":0.75  },
-    #fbulge_dict= {"lo":0.5 , "hi":0.9  },
-    #q_dict     = {"lo":0.4 , "hi":1.0  },
-    #pos_ang_dict={"lo":0.0 , "hi":180.0},
-    #ngals_arcmin2 = 30.0,
     nsimimages    = 10,
     random_seed   = 8241573,
-    #ncpu          = 2,
     args_pssr   = utils.argpasser(),
     ):
     """
@@ -1038,16 +1033,7 @@ def ModelGalLocator(
     readincat,
     zeropoint  = 20.789,
     psf_dict   = {"moffat":{ "beta": 4.5, "fwhm": 1.6} },
-    #stamp_size_arcsec   =   20.0,
-    #mag_dict   = {"lo":19.0, "hi":23.0 },
-    #hlr_dict   = {"lo":0.35 , "hi":0.75  },
-    #fbulge_dict= {"lo":0.5 , "hi":0.9  },
-    #q_dict     = {"lo":0.4 , "hi":1.0  },
-    #pos_ang_dict={"lo":0.0 , "hi":180.0},
-    #ngals_arcmin2 = 30.0,
-    #nsimimages    = 10,
     random_seed   = 8241573,
-    #ncpu          = 2,
     args_pssr     = utils.argpasser(),
     ):
     """
@@ -1199,16 +1185,7 @@ def RealGalLocator(
     path2image,
     zeropoint  = 20.789,
     psf_dict   = {"moffat":{ "beta": 4.5, "fwhm": 1.6} },
-    #stamp_size_arcsec   =   20.0,
-    #mag_dict   = {"lo":19.0, "hi":23.0 },
-    #hlr_dict   = {"lo":0.35 , "hi":0.75  },
-    #fbulge_dict= {"lo":0.5 , "hi":0.9  },
-    #q_dict     = {"lo":0.4 , "hi":1.0  },
-    #pos_ang_dict={"lo":0.0 , "hi":180.0},
-    #ngals_arcmin2 = 30.0,
-    #nsimimages    = 10,
     random_seed   = 8241573,
-    #ncpu          = 2,
     args_pssr     = utils.argpasser(),
     ):
     """
@@ -1354,16 +1331,7 @@ def PntSrcLocator(
     path2image,
     zeropoint  = 20.789,
     psf_dict   = {"moffat":{ "beta": 4.5, "fwhm": 1.6} },
-    #stamp_size_arcsec   =   20.0,
-    #mag_dict   = {"lo":19.0, "hi":23.0 },
-    #hlr_dict   = {"lo":0.35 , "hi":0.75  },
-    #fbulge_dict= {"lo":0.5 , "hi":0.9  },
-    #q_dict     = {"lo":0.4 , "hi":1.0  },
-    #pos_ang_dict={"lo":0.0 , "hi":180.0},
-    #ngals_arcmin2 = 30.0,
-    #nsimimages    = 10,
     random_seed   = 8241573,
-    #ncpu          = 2,
     args_pssr     = utils.argpasser(),
     ):
     """
