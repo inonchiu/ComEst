@@ -1247,18 +1247,10 @@ class fitsimage:
     def ModelGalLocator(self,
         path2image,
         path2readincat,
-        psf_dict   = None,
-        stamp_size_arcsec   =   20.0,
-        mag_dict   = {"lo":20.0, "hi":25.0 },
-        hlr_dict   = {"lo":0.35 , "hi":0.75  },
-        fbulge_dict= {"lo":0.5 , "hi":0.9  },
-        q_dict     = {"lo":0.4 , "hi":1.0  },
-        pos_ang_dict={"lo":0.0 , "hi":180.0},
-        ngals_arcmin2 = 15.0,
-        nsimimages    = 50,
+        psf_dict      = None,
         random_seed   = 234231,
         sims_nameroot = "modgal",
-        ncpu          = 2,
+        args_pssr     = utils.argpasser(),
         ):
         """
 
@@ -1321,7 +1313,8 @@ class fitsimage:
             psf_dict    =   {"moffat":{ "beta": 4.5, "fwhm": self.img_fwhm } }
 
         # readin the sims catalog (produced by the standalone program) and only pass the non-header part
-        if  not  os.path.isfile(path2readincat): raise IOError("The file", path2readincat, "does not exist. Please check.")
+        if  not  os.path.isfile(path2readincat):
+            raise IOError("The file", path2readincat, "does not exist. Please check.")
         sim_fits     =   pyfits.open(path2readincat)
         # update nsimimages - minus the header
         nsimimages   =   len(sim_fits) - 1 
@@ -1336,17 +1329,9 @@ class fitsimage:
         print "#", "path2image:", path2image
         print "#", "path2readincat:", path2readincat
         print "#", "psf_dict:", psf_dict
-        print "#", "stamp_size_arcsec:", stamp_size_arcsec
-        print "#", "mag_dict:", mag_dict
-        print "#", "hlr_dict:", hlr_dict
-        print "#", "fbulge_dict:", fbulge_dict
-        print "#", "q_dict:", q_dict
-        print "#", "pos_ang_dict:", pos_ang_dict
-        print "#", "ngals_arcmin2:", ngals_arcmin2
-        print "#", "nsimimages:", nsimimages
         print "#", "random_seed:", random_seed
         print "#", "sims_nameroot:", sims_nameroot
-        print "#", "ncpu:", ncpu
+        args_pssr.i_am()
         print
 
         # timing
@@ -1358,16 +1343,8 @@ class fitsimage:
             readincat           = readincat,
             zeropoint           = zeropoint,
             psf_dict            = psf_dict,
-            stamp_size_arcsec   = stamp_size_arcsec,
-            mag_dict            = mag_dict,
-            hlr_dict            = hlr_dict,
-            fbulge_dict         = fbulge_dict,
-            q_dict              = q_dict,
-            pos_ang_dict        = pos_ang_dict,
-            ngals_arcmin2       = ngals_arcmin2,
-            nsimimages          = nsimimages,
             random_seed         = random_seed,
-            ncpu                = ncpu,
+            args_pssr           = args_pssr,
             )
 
         # timing
@@ -1380,7 +1357,8 @@ class fitsimage:
         
         # make sure dir exists
         outdir_sims             = os.path.join(self.path2outdir, sims_nameroot + "_sims")
-        if os.path.isdir( outdir_sims ) == False: os.makedirs(outdir_sims)
+        if os.path.isdir( outdir_sims ) == False:
+            os.makedirs(outdir_sims)
         # save
         # for mef image
         SrcPlacer.galsim.fits.writeMulti(out_mef, outdir_sims + "/" + sims_nameroot + ".sims.fits")
@@ -1409,17 +1387,9 @@ class fitsimage:
     def RealGalLocator(self,
         path2image,
         psf_dict   = None,
-        stamp_size_arcsec   =   20.0,
-        mag_dict   = {"lo":20.0, "hi":25.0 },
-        hlr_dict   = {"lo":0.35 , "hi":0.75  },
-        fbulge_dict= {"lo":0.5 , "hi":0.9  },
-        q_dict     = {"lo":0.4 , "hi":1.0  },
-        pos_ang_dict={"lo":0.0 , "hi":180.0},
-        ngals_arcmin2 = 15.0,
-        nsimimages    = 50,
         random_seed   = 234231,
         sims_nameroot = "realgal",
-        ncpu          = 2,
+        args_pssr     = utils.argpasser(),
         ):
         """
             
@@ -1474,6 +1444,7 @@ class fitsimage:
         """
         # assign the value and sanitize
         zeropoint   =   self.img_zp     # zeropoint
+        nsimimages  =   args_pssr.nsimimages
         # assign psf
         if  psf_dict  is None:
             psf_dict    =   {"moffat":{ "beta": 4.5, "fwhm": self.img_fwhm } }
@@ -1483,17 +1454,9 @@ class fitsimage:
         print "#", "Using RealGalLocator to put galaxies (bulge + disk) on the targeted image..."
         print "#", "path2image:", path2image
         print "#", "psf_dict:", psf_dict
-        print "#", "stamp_size_arcsec:", stamp_size_arcsec
-        print "#", "mag_dict:", mag_dict
-        print "#", "hlr_dict:", hlr_dict
-        print "#", "fbulge_dict:", fbulge_dict
-        print "#", "q_dict:", q_dict
-        print "#", "pos_ang_dict:", pos_ang_dict
-        print "#", "ngals_arcmin2:", ngals_arcmin2
-        print "#", "nsimimages:", nsimimages
         print "#", "random_seed:", random_seed
         print "#", "sims_nameroot:", sims_nameroot
-        print "#", "ncpu:", ncpu
+        args_pssr.i_am()
         print
         
         # timing
@@ -1504,16 +1467,8 @@ class fitsimage:
             path2image          = path2image,
             zeropoint           = zeropoint,
             psf_dict            = psf_dict,
-            stamp_size_arcsec   = stamp_size_arcsec,
-            mag_dict            = mag_dict,
-            hlr_dict            = hlr_dict,
-            fbulge_dict         = fbulge_dict,
-            q_dict              = q_dict,
-            pos_ang_dict        = pos_ang_dict,
-            ngals_arcmin2       = ngals_arcmin2,
-            nsimimages          = nsimimages,
             random_seed         = random_seed,
-            ncpu                = ncpu,
+            args_pssr           = args_pssr,
             )
             
         # timing
@@ -1526,7 +1481,8 @@ class fitsimage:
         
         # make sure dir exists
         outdir_sims             = os.path.join(self.path2outdir, sims_nameroot + "_sims")
-        if os.path.isdir( outdir_sims ) == False: os.makedirs(outdir_sims)
+        if os.path.isdir( outdir_sims ) == False:
+            os.makedirs(outdir_sims)
         # save
         # for mef image
         SrcPlacer.galsim.fits.writeMulti(out_mef, outdir_sims + "/" + sims_nameroot + ".sims.fits")
@@ -1554,17 +1510,9 @@ class fitsimage:
     def PntSrcLocator(self,
         path2image,
         psf_dict   = None,
-        stamp_size_arcsec   =   20.0,
-        mag_dict   = {"lo":20.0, "hi":25.0 },
-        hlr_dict   = {"lo":0.35 , "hi":0.75  },
-        fbulge_dict= {"lo":0.5 , "hi":0.9  },
-        q_dict     = {"lo":0.4 , "hi":1.0  },
-        pos_ang_dict={"lo":0.0 , "hi":180.0},
-        ngals_arcmin2 = 15.0,
-        nsimimages    = 50,
         random_seed   = 2342221,
         sims_nameroot = "pntsrc",
-        ncpu          = 2,
+        args_pssr     = utils.argpasser(),
         ):
         """
             
@@ -1618,6 +1566,7 @@ class fitsimage:
         """
         # assign the value and sanitize
         zeropoint   =   self.img_zp     # zeropoint
+        nsimimages  =   args_pssr.nsimimages
         # assign psf
         if  psf_dict  is None:
             psf_dict    =   {"moffat":{ "beta": 4.5, "fwhm": self.img_fwhm } }
@@ -1627,17 +1576,9 @@ class fitsimage:
         print "#", "Using PntSrcLocator to put point sources on the targeted image..."
         print "#", "path2image:", path2image
         print "#", "psf_dict:", psf_dict
-        print "#", "stamp_size_arcsec:", stamp_size_arcsec
-        print "#", "mag_dict:", mag_dict
-        print "#", "hlr_dict:", hlr_dict
-        print "#", "fbulge_dict:", fbulge_dict
-        print "#", "q_dict:", q_dict
-        print "#", "pos_ang_dict:", pos_ang_dict
-        print "#", "ngals_arcmin2:", ngals_arcmin2
-        print "#", "nsimimages:", nsimimages
         print "#", "random_seed:", random_seed
         print "#", "sims_nameroot:", sims_nameroot
-        print "#", "ncpu:", ncpu
+        args_pssr.i_am()
         print
         
         # timing
@@ -1648,16 +1589,8 @@ class fitsimage:
             path2image          = path2image,
             zeropoint           = zeropoint,
             psf_dict            = psf_dict,
-            stamp_size_arcsec   = stamp_size_arcsec,
-            mag_dict            = mag_dict,
-            hlr_dict            = hlr_dict,
-            fbulge_dict         = fbulge_dict,
-            q_dict              = q_dict,
-            pos_ang_dict        = pos_ang_dict,
-            ngals_arcmin2       = ngals_arcmin2,
-            nsimimages          = nsimimages,
             random_seed         = random_seed,
-            ncpu                = ncpu,
+            args_pssr           = args_pssr,
             )
             
         # timing
@@ -1670,7 +1603,8 @@ class fitsimage:
             
         # make sure dir exists
         outdir_sims             = os.path.join(self.path2outdir, sims_nameroot + "_sims")
-        if os.path.isdir( outdir_sims ) == False: os.makedirs(outdir_sims)
+        if os.path.isdir( outdir_sims ) == False:
+            os.makedirs(outdir_sims)
         # save
         # for mef image
         SrcPlacer.galsim.fits.writeMulti(out_mef, outdir_sims + "/" + sims_nameroot + ".sims.fits")

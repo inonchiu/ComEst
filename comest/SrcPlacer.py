@@ -949,7 +949,7 @@ def BulDiskLocator(
 
     """
     # ---
-    # extractor args_pssr
+    # extract args_pssr
     # ---
     stamp_size_arcsec   =   args_pssr.stamp_size_arcsec
     mag_dict            =   args_pssr.mag_dict
@@ -1038,16 +1038,17 @@ def ModelGalLocator(
     readincat,
     zeropoint  = 20.789,
     psf_dict   = {"moffat":{ "beta": 4.5, "fwhm": 1.6} },
-    stamp_size_arcsec   =   20.0,
-    mag_dict   = {"lo":19.0, "hi":23.0 },
-    hlr_dict   = {"lo":0.35 , "hi":0.75  },
-    fbulge_dict= {"lo":0.5 , "hi":0.9  },
-    q_dict     = {"lo":0.4 , "hi":1.0  },
-    pos_ang_dict={"lo":0.0 , "hi":180.0},
-    ngals_arcmin2 = 30.0,
-    nsimimages    = 10,
+    #stamp_size_arcsec   =   20.0,
+    #mag_dict   = {"lo":19.0, "hi":23.0 },
+    #hlr_dict   = {"lo":0.35 , "hi":0.75  },
+    #fbulge_dict= {"lo":0.5 , "hi":0.9  },
+    #q_dict     = {"lo":0.4 , "hi":1.0  },
+    #pos_ang_dict={"lo":0.0 , "hi":180.0},
+    #ngals_arcmin2 = 30.0,
+    #nsimimages    = 10,
     random_seed   = 8241573,
-    ncpu          = 2,
+    #ncpu          = 2,
+    args_pssr     = utils.argpasser(),
     ):
     """
 
@@ -1103,7 +1104,19 @@ def ModelGalLocator(
     .. seealso:: ``comest.ComEst.BulDiskLocator`` for more details about the configuration.
 
     """
-
+    # ---
+    # extract args_pssr
+    # ---
+    stamp_size_arcsec   =   args_pssr.stamp_size_arcsec
+    mag_dict            =   args_pssr.mag_dict
+    hlr_dict            =   args_pssr.hlr_dict
+    fbulge_dict         =   args_pssr.fbulge_dict
+    q_dict              =   args_pssr.q_dict
+    pos_ang_dict        =   args_pssr.pos_ang_dict
+    ngals_arcmin2       =   args_pssr.ngals_arcmin2
+    #nsimimages          =   args_pssr.nsimimages
+    ncpu                =   args_pssr.ncpu
+    
     # set up the cpu number
     if  ncpu > multiprocessing.cpu_count():
         print
@@ -1186,16 +1199,17 @@ def RealGalLocator(
     path2image,
     zeropoint  = 20.789,
     psf_dict   = {"moffat":{ "beta": 4.5, "fwhm": 1.6} },
-    stamp_size_arcsec   =   20.0,
-    mag_dict   = {"lo":19.0, "hi":23.0 },
-    hlr_dict   = {"lo":0.35 , "hi":0.75  },
-    fbulge_dict= {"lo":0.5 , "hi":0.9  },
-    q_dict     = {"lo":0.4 , "hi":1.0  },
-    pos_ang_dict={"lo":0.0 , "hi":180.0},
-    ngals_arcmin2 = 30.0,
-    nsimimages    = 10,
+    #stamp_size_arcsec   =   20.0,
+    #mag_dict   = {"lo":19.0, "hi":23.0 },
+    #hlr_dict   = {"lo":0.35 , "hi":0.75  },
+    #fbulge_dict= {"lo":0.5 , "hi":0.9  },
+    #q_dict     = {"lo":0.4 , "hi":1.0  },
+    #pos_ang_dict={"lo":0.0 , "hi":180.0},
+    #ngals_arcmin2 = 30.0,
+    #nsimimages    = 10,
     random_seed   = 8241573,
-    ncpu          = 2,
+    #ncpu          = 2,
+    args_pssr     = utils.argpasser(),
     ):
     """
 
@@ -1250,7 +1264,19 @@ def RealGalLocator(
     .. todo:: Perhaps we should add the input catalog arguments in the future.
 
     """
-
+    # ---
+    # extract args_pssr
+    # ---
+    stamp_size_arcsec   =   args_pssr.stamp_size_arcsec
+    mag_dict            =   args_pssr.mag_dict
+    hlr_dict            =   args_pssr.hlr_dict
+    fbulge_dict         =   args_pssr.fbulge_dict
+    q_dict              =   args_pssr.q_dict
+    pos_ang_dict        =   args_pssr.pos_ang_dict
+    ngals_arcmin2       =   args_pssr.ngals_arcmin2
+    nsimimages          =   args_pssr.nsimimages
+    ncpu                =   args_pssr.ncpu
+    
     # set up the cpu number
     if  ncpu > multiprocessing.cpu_count():
         print
@@ -1328,16 +1354,17 @@ def PntSrcLocator(
     path2image,
     zeropoint  = 20.789,
     psf_dict   = {"moffat":{ "beta": 4.5, "fwhm": 1.6} },
-    stamp_size_arcsec   =   20.0,
-    mag_dict   = {"lo":19.0, "hi":23.0 },
-    hlr_dict   = {"lo":0.35 , "hi":0.75  },
-    fbulge_dict= {"lo":0.5 , "hi":0.9  },
-    q_dict     = {"lo":0.4 , "hi":1.0  },
-    pos_ang_dict={"lo":0.0 , "hi":180.0},
-    ngals_arcmin2 = 30.0,
-    nsimimages    = 10,
+    #stamp_size_arcsec   =   20.0,
+    #mag_dict   = {"lo":19.0, "hi":23.0 },
+    #hlr_dict   = {"lo":0.35 , "hi":0.75  },
+    #fbulge_dict= {"lo":0.5 , "hi":0.9  },
+    #q_dict     = {"lo":0.4 , "hi":1.0  },
+    #pos_ang_dict={"lo":0.0 , "hi":180.0},
+    #ngals_arcmin2 = 30.0,
+    #nsimimages    = 10,
     random_seed   = 8241573,
-    ncpu          = 2,
+    #ncpu          = 2,
+    args_pssr     = utils.argpasser(),
     ):
     """
 
@@ -1390,7 +1417,19 @@ def PntSrcLocator(
     .. seealso:: ``comest.ComEst.PntSrcLocator`` for more details about the configuration.
 
     """
-
+    # ---
+    # extract args_pssr
+    # ---
+    stamp_size_arcsec   =   args_pssr.stamp_size_arcsec
+    mag_dict            =   args_pssr.mag_dict
+    hlr_dict            =   args_pssr.hlr_dict
+    fbulge_dict         =   args_pssr.fbulge_dict
+    q_dict              =   args_pssr.q_dict
+    pos_ang_dict        =   args_pssr.pos_ang_dict
+    ngals_arcmin2       =   args_pssr.ngals_arcmin2
+    nsimimages          =   args_pssr.nsimimages
+    ncpu                =   args_pssr.ncpu
+    
     # set up the cpu number
     if  ncpu > multiprocessing.cpu_count():
         print
