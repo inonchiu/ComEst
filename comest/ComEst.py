@@ -16,6 +16,7 @@ from distutils.spawn import find_executable
 import os
 import time
 import sys
+import multiprocessing
 import SrcPlacer
 import py2dmatch
 import utils
@@ -793,6 +794,30 @@ def DrawCatFromLib(
 
     return true_catalogs
 
+
+# ---
+# Set up the worker
+# ---
+def _worker(targeted_routine, args_and_info, results_info_proc):
+    """
+        This is the generator worker routine for multiprocessing.
+
+        Parameters:
+        -`targeted_routine`: function object. The targeted function you want to run and pass the args_and_info to.
+        -`args_and_info`: multiprocessing.Queue. It is a queue with (args, info) tuples.
+        args are the arguements to pass to targeted_routine
+        info is passed along to the output queue.
+        -`results_info_proc`: multiprocessing.Queue.
+        It is a queue storing (result, info, time) tuples:
+        result is the return value of from targeted_routine
+        info is passed through from the input queue.
+        proc is the process name.
+        """
+    for (args, info) in iter(args_and_info.get, 'STOP'):
+        result = targeted_routine(*args)
+        results_info_proc.put( (result, info, multiprocessing.current_process().name) )
+
+
 ######
 #
 # module
@@ -1155,6 +1180,7 @@ class fitsimage:
         """
         # assign the value and sanitize
         zeropoint   =   self.img_zp     # zeropoint
+        nsimimages  =   args_pssr.nsimimages
         # assign psf
         if  psf_dict  is None:
             psf_dict    =   {"moffat":{ "beta": 4.5, "fwhm": self.img_fwhm } }
@@ -1671,17 +1697,17 @@ class fitsimage:
     # ---
     # Run SE on sims
     # ---
-    def RunSEforSims(self, sims_nameroot, sims_sex_args = "", path2maskmap = None, outputcheckimage = False, tol_fwhm = 1.0, ztol = 1.0):
+    def RunSEforSims(self, sims_nameroot, sims_sex_args = "", path2maskmap = None, outputcheckimage = False, tol_fwhm = 1.0, ztol = 1.0, ncpu = 1):
         """
 
         :param sims_nameroot: The code name you want to identify this run of simulation. It is not only the name of the subdirectory for saving the images simulated in this run, but also the code name for **ComEst** to identify the simulation for the remaining analysis pipeline. IMPORTANT: Please use the consistent code name ``sims_nameroot`` for this set of simulated images throughout **ComEst**.
-        
+
         :param sims_sex_args: The additional argument you want to pass to **SExtractor** to run on simulated image. It should be the same as ``full_sex_args`` which you used to detect/catalog all the sources in the first palce for the fair comparison.
-        
+
         :param path2maskmap: The absolute path to the masking map. This masking map MUST be in the exactly same shape as the observed image (and hence the simulated image). **ComEst** will mask every objects detected in simulated image with the position within 1 pixel of the masked region. Every pixel in ``path2maskmap`` with value > 0 is considered to be masked.  Therefore, it is convenient to use the segmentation map outputted by **SExtractor** as an alternative mask map if you dont want the simulated objects to be considered as 'detected' in the position where there is an object in the input image. It is handy to use the segementation map of BnB image created in the early state as the masking map. By default, it is ``path2maskmap = None``.
-        
+
         :param outputcheckimage: Whether or not **SExtractor** will output the check-images (as the diagnostic output) and save them in the disk. By default, it is ``outputcheckimage = False``.
-        
+
         :param tol_fwhm: The multiplicative factor of ``img_fwhm`` used in matching the **SExtractor** to the mock catalog. By default, it is ``tol_fwhm = 1`` meaning we match all the **SExtractor** objects to the mock catalog within 1 ``img_fwhm``.
         :param ztol: the tolerance of magnitude in matching. The objects are considered to ba a pair of match if the distance separation < tol_fwhm * fwhm and abs(mag_auto - mag_true) < ztol. Default is 1.0.
         
@@ -1705,6 +1731,19 @@ class fitsimage:
             * ghost: [se] - [matched se], the sources detected by **SExtractor** but they are not in the input mock. That is, they are ghost and considered as the false detection. It is called ``sims_nameroot + "_sims" + "/" + sims_nameroot + ".sims.sex.ghost.cat.fits"``.
 
         """
+        # assign values
+        ncpu        =   int( ncpu )
+
+        # set up the cpu number
+        if  ncpu > multiprocessing.cpu_count():
+            print
+            print RuntimeWarning("ncpu:", ncpu, "is larger than total number of cpu:", multiprocessing.cpu_count())
+            print RuntimeWarning("Using the total number of the cpu:", multiprocessing.cpu_count())
+            print
+            nproc    =   multiprocessing.cpu_count()
+        else:
+            nproc    =   ncpu
+
         # dignostic
         print
         print "#", "Running SE for sims..."
@@ -1714,15 +1753,15 @@ class fitsimage:
         print "#", "outputcheckimage:", outputcheckimage
         print "#", "tol_fwhm:", tol_fwhm, "[the objects are considered a matched pair if within this factor of fwhm.]"
         print
-        
+
         # get the outdir_sims and path2sims_img
         outdir_sims     =   os.path.join(self.path2outdir, sims_nameroot + "_sims")
         path2sims_img   =   os.path.join(outdir_sims, sims_nameroot + ".sims.fits")
-        
+
         # read in the fits image to see how many extension of that MEF.
         readin_mef      =   pyfits.open(path2sims_img)
         Nmef            =   len(readin_mef)
-        
+
         # read in mask file if any
         if path2maskmap is not None:
             # read in mask
@@ -1740,21 +1779,21 @@ class fitsimage:
                                             np.linspace(0, self.y_npixels, self.y_npixels+1))
             # get the masked pixels - anything > 0 is considered as masked
             i_am_masked =   ( readin_mask > 0 )
-    
-    
+
+
         # diagnostic
         print
         print "#", "number of the extension in", path2sims_img, ":", Nmef
         print
         print "#", "Running SE on sims ..."
         print
-        
+
         # construct the args
         put_me_in_se_args =   " -MAG_ZEROPOINT" + "    " + "%.3f" % self.img_zp   + \
                               " -SEEING_FWHM"   + "    " + "%.3f" % self.img_fwhm + \
                               " -PIXEL_SCALE"   + "    " + "%.3f" % self.img_pixel_scale + \
                               "    " + sims_sex_args
-        
+
         # construct the command
         run_me  =   []
         for nn_mef  in xrange(Nmef):
@@ -1771,29 +1810,52 @@ class fitsimage:
                 outputcheckimage= outputcheckimage,
                 next            = nn_mef) )
 
-        
-        # run it!
-        # later on we can parallize it but not now.
-        stdout  =   []
-        for nn_mef in xrange(Nmef):
-            # diagnostic
-            print
-            print "#", run_me[nn_mef]
-            print
-            # use temp to record stdout
-            stdout_tmp      =       os.system(run_me[nn_mef])
-            # put it back in stdout
-            stdout.append(stdout_tmp)
-            # cleam
-            del stdout_tmp
-        
+
+        # ---
+        # Start simulate the image one by one
+        # ---
+        # set up the task queue
+        task_queue          =   multiprocessing.Queue()
+        # set up the done task
+        done_queue          =   multiprocessing.Queue()
+
+        # looping over commands
+        for nrun_me_single, run_me_single in enumerate(run_me):
+            # put the task
+            task_queue.put(
+                           ( (run_me_single, ),
+                            "SE on %i image" % nrun_me_single ) )
+
+        # Run the tasks and create done_queue
+        # Each Process command starts up a parallel process that will keep checking the queue
+        # for a new task. If there is one there, it grabs it and does it. If not, it waits
+        # until there is one to grab. When it finds a 'STOP', it shuts down.
+        for nnk in xrange(nproc):
+            pprcs   =   multiprocessing.Process(target = _worker, args = ( os.system, task_queue, done_queue) ).start()
+
+        # diagnostic
+        for nnk in xrange(Nmef):
+            _, processing_info, processing_name      =       done_queue.get()
+            print "#", "%s: for file %s was done." % (processing_name, processing_info)
+
+        # Stop the processes
+        # The 'STOP's could have been put on the task list before starting the processes, or you
+        # can wait.  In some cases it can be useful to clear out the done_queue (as we just did)
+        # and then add on some more tasks.  We don't need that here, but it's perfectly fine to do.
+        # Once you are done with the processes, putting nproc 'STOP's will stop them all.
+        # This is important, because the program will keep running as long as there are running
+        # processes, even if the main process gets to the end.  So you do want to make sure to
+        # add those 'STOP's at some point!
+        for nnk in xrange(nproc):
+            task_queue.put('STOP')
+
         # diagnostic
         print
         print "#", "Running SE on sims is done..."
         print
         print "#", "Now it reads in the SE catalog and the truth catalog."
         print
-        
+
         # read the truth fits and se output catalog
         true_cat    =   []
         se_out_cat  =   []
@@ -1801,7 +1863,7 @@ class fitsimage:
             # naming
             true_cat_temp     =   outdir_sims + "/" + sims_nameroot + ".sims.cat.fits"
             se_out_cat_temp   =   outdir_sims + "/" + sims_nameroot + ".sims.sex.%i" % nn_mef + ".cat.fits"
-            
+
             # read in se catalog - it is more tricky if we do have mask map.
             if path2maskmap is None:
                 # read in true_cat - add copy in the end is to avoid the over-open the files
@@ -1832,14 +1894,14 @@ class fitsimage:
                 del se_temp, true_temp, ds_se, ds_true
             # clean
             del true_cat_temp, se_out_cat_temp
-        
+
         # diagnostic
         print
         print "#", "Read in SE output cat is done."
         print
         print "#", "Start matching."
         print
-        
+
         # match true_cat and se_out_cat in cartesian coordinate.
         i_am_matched_in_se    =   []
         i_am_matched_in_true  =   []
@@ -1910,14 +1972,14 @@ class fitsimage:
             # clean
             #del i_am_matched_in_se_temp, i_am_matched_in_true_temp, i_am_distance_in_pixel_temp, returned_masked
             del i_am_matched_in_se_temp, i_am_matched_in_true_temp, i_am_distance_in_pixel_temp
-        
+
         # diagnostic
         print
         print "#", "Matching is done."
         print
         print "#", "Outputing."
         print
-        
+
         #
         # now we have the following catalogs
         # 1. merged true catalog: [all true]
@@ -1925,13 +1987,13 @@ class fitsimage:
         # 2. unmatched src: [true] - [matched true]
         # 3. ghost: [se] - [matched se]
         #
-        
+
         # define the file name
         merged_true_ff      =   outdir_sims + "/" + sims_nameroot + ".sims.sex.merged_true.cat.fits"
         matched_pairs_ff    =   outdir_sims + "/" + sims_nameroot + ".sims.sex.matched_pairs.cat.fits"
         unmatched_true_ff   =   outdir_sims + "/" + sims_nameroot + ".sims.sex.unmatched.cat.fits"
         ghost_ff            =   outdir_sims + "/" + sims_nameroot + ".sims.sex.ghost.cat.fits"
-        
+
         # merge them
         merged_true          =   true_cat[0]
         merged_matched_pairs =   rfn.merge_arrays(

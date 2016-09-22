@@ -39,7 +39,7 @@ img_fwhm        =       0.9     # from Desai+12 i band image.
 MAG_LO          =       20.0    # simulated magnitude range
 MAG_HI          =       25.0    # simulated magnitude range
 
-nsimimages      =       3      # the number of simulated images per set
+nsimimages      =       20     # the number of simulated images per set
 ncpu            =       3      # the number of cpu cores used in simulation
 nset            =       2      # the number of the sets, each set should contain nsimimages simulated images
 
@@ -190,8 +190,8 @@ if    use_bulgal:
     # ---
     # Run SE
     # ---
-    for nsnset in xrange(nset):
-        fits_image_example.RunSEforSims( sims_nameroot = "buldisk_"+"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits", ztol = 1.5)
+    #for nsnset in xrange(nset):
+    fits_image_example.RunSEforSims( sims_nameroot = "buldisk_"+"%i" % nsnset, sims_sex_args = fits_image_example.full_sex_args, outputcheckimage = False, tol_fwhm=1.0, path2maskmap = fits_image_example.path2outdir + "/" + bnb_root_name + ".segmentation.fits", ztol = 1.5, ncpu = 3)
 
 eee
 #####

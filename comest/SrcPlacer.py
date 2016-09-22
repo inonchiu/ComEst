@@ -893,7 +893,7 @@ def BulDiskLocator(
     #q_dict     = {"lo":0.4 , "hi":1.0  },
     #pos_ang_dict={"lo":0.0 , "hi":180.0},
     #ngals_arcmin2 = 30.0,
-    #nsimimages    = 10,
+    nsimimages    = 10,
     random_seed   = 8241573,
     #ncpu          = 2,
     args_pssr   = utils.argpasser(),
@@ -958,6 +958,7 @@ def BulDiskLocator(
     q_dict              =   args_pssr.q_dict
     pos_ang_dict        =   args_pssr.pos_ang_dict
     ngals_arcmin2       =   args_pssr.ngals_arcmin2
+    nsimimages          =   args_pssr.nsimimages
     ncpu                =   args_pssr.ncpu
 
     # set up the cpu number
