@@ -5,7 +5,7 @@ Authors:
 
 **ComEst** is a completeness estimator of CCD images conducted in astronomical observations saved in the [FITS](http://fits.gsfc.nasa.gov/fits_documentation.html) format. Specifically, **ComEst** is designed for estimating the completeness of the source finder **[SExtractor](http://www.astromatic.net/software/sextractor)** on the optical and near-infrared (NIR) imaging of point sources or galaxies. The completeness is estimated as the detection rate of simulated sources-- simulated by the python image simulation toolkit **[GalSim](https://github.com/GalSim-developers/GalSim)**-- which are injected into the observed images with various configuration. In this way, **ComEst** estimates the completeness of the source detection-- as a function of flux (or magnitude) and, moreover, position on the CCD-- directly from the image itself. **ComEst** only requires the observed iamge as the input and performs the end-to-end estimation of the completeness. Apart from the completeness, **ComEst** can also estimate the purity of the source detection. 
 
-**ComEst** is released as a **Python** package with an easy-to-use and flexible syntax. More information can be found in the [paper](http://www.usm.uni-muenchen.de/people/inonchiu/ComEst.pdf).
+**ComEst** is released as a **Python** package with an easy-to-use and flexible syntax. More information can be found in the paper published in [Astronomy and computing](http://adsabs.harvard.edu/abs/2016A%26C....16...79C).
 
 If you use **ComEst** in your work please contact the authors.
 
