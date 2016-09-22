@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='comest',
-    version='1.0',
+    version='2.0',
     packages=[
               'example',
               'comest',
@@ -15,6 +15,6 @@ setup(
     url='',
     license='',
     author='I-Non Chiu',
-    author_email='inonchiu@usm.lmu.de',
-    description='Completeness Estimator'
+    author_email='inchiu@asiaa.sinica.edu.tw',
+    description='An estimator of completeness and purity of the source extractor'
 )
