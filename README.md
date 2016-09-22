@@ -51,7 +51,7 @@ If you use **ComEst** in your work please contact the authors.
 
 ### Documentation
 
-Please see [here](http://www.usm.uni-muenchen.de/people/inonchiu/ComEst/index.html).
+Please see [here](http://www.usm.uni-muenchen.de/people/inonchiu/ComEst/index.html). IMPORTANT: this documentation is out-dated. Yes, I know, I need to find time to update it...
 
 ### Acknowledgement
 
@@ -64,5 +64,5 @@ The computations for **ComEst** have been have been carried out on the computing
 
 ### Contribution
 
-Any comment and suggestion is welcome, please email to `inonchiu@usm.lmu.de`, `shantanu@usm.lmu.de` or [Jiayi Liu](mailto:astro.jiayi@googlemail.com).
+Any comment and suggestion is welcome, please email to [I-Non Chiu](mailto:inchiu@asiaa.sinica.edu.tw), [Shantanu Desai](mailto:shantanud@iith.ac.in) or [Jiayi Liu](mailto:astro.jiayi@googlemail.com).
 
