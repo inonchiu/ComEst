@@ -231,7 +231,6 @@ if    use_reagal:
 
 
 if    use_pntsrc:
- 
     # ---
     # put srcs on the images
     # ---
@@ -250,7 +249,7 @@ if    use_pntsrc:
 
 
 
-ee
+
 #####
 #
 # Histgram
@@ -261,7 +260,7 @@ HIST_DICT        =       {
     ttype + "_" + "%i" % nsnset   :   {
         "com"   :   fits_image_example.DeriveCom(sims_nameroot = ttype + "_" + "%i" % nsnset, x_steps_arcmin = 3.0, y_steps_arcmin = 3.0, mag_edges = np.arange(20.0,27.0,0.1), save_files = True),
         "pur"   :   fits_image_example.DerivePur(sims_nameroot = ttype + "_" + "%i" % nsnset, x_steps_arcmin = 3.0, y_steps_arcmin = 3.0, mag_edges = np.arange(20.0,27.0,0.1), save_files = True),
-    } for ttype in np.array(["modgal", "buldisk", "realgal", "pntsrc"]) for nsnset in xrange(nset)
+    } for ttype in np.array(["buldisk", "realgal", "pntsrc"]) for nsnset in xrange(nset)
 }
 
 # Save the pickle file

@@ -30,3 +30,5 @@ example/outdir_example/*
 build/*
 
 comest/test.py
+
+example/.ipynb_checkpoints/example_and_explanation-checkpoint.ipynb
